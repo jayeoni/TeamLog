@@ -29,6 +29,8 @@ export interface DailyLog {
   goal: string
   training: string
   condition: number
+  startTime: string | null
+  duration: number | null
   sleep: number | null
   weight: number | null
   painArea: string

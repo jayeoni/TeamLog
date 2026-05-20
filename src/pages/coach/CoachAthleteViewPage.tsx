@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { collection, query, where, getDocs, orderBy, limit, updateDoc, doc } from 'firebase/firestore'
+import { collection, query, where, getDocs, getDoc, orderBy, limit, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { formatKoreanDate } from '../../utils/dateUtils'
@@ -28,38 +28,38 @@ export default function CoachAthleteViewPage() {
 
     const fetchData = async () => {
       try {
-        const [athleteSnap, logSnap] = await Promise.all([
-          getDocs(query(
-            collection(db, 'users'),
-            where('__name__', '==', athleteId)
-          )),
-          getDocs(query(
-            collection(db, 'dailyLogs'),
-            where('athleteId', '==', athleteId),
-            orderBy('date', 'desc'),
-            limit(60)
-          )),
-        ])
-
-        if (!athleteSnap.empty) {
-          setAthlete({ id: athleteSnap.docs[0].id, ...athleteSnap.docs[0].data() } as AppUser)
+        // Fetch athlete first — simple getDoc, no index needed
+        const athleteSnap = await getDoc(doc(db, 'users', athleteId))
+        if (athleteSnap.exists()) {
+          setAthlete({ id: athleteSnap.id, ...athleteSnap.data() } as AppUser)
         }
 
-        const l = logSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[]
-        setLogs(l)
-
-        const s: CalendarStamp[] = l.map(log => ({
-          date: log.date,
-          hasLog: true,
-          hasFeedback: !!log.coachFeedback,
-          hasPain: !!log.painArea?.trim(),
-          condition: log.condition ?? null,
-        }))
-        setStamps(s)
-
-        const fb: Record<string, string> = {}
-        l.forEach(log => { if (log.coachFeedback) fb[log.id] = log.coachFeedback })
-        setFeedbacks(fb)
+        // Fetch logs separately so a missing index doesn't hide the athlete
+        try {
+          const logSnap = await getDocs(query(
+            collection(db, 'dailyLogs'),
+            where('athleteId', '==', athleteId),
+            where('teamId', '==', user.teamId),
+            orderBy('date', 'desc'),
+            limit(60)
+          ))
+          const l = logSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[]
+          setLogs(l)
+          setStamps(l.map(log => ({
+            date: log.date,
+            hasLog: true,
+            hasFeedback: !!log.coachFeedback,
+            hasPain: !!log.painArea?.trim(),
+            condition: log.condition ?? null,
+          })))
+          const fb: Record<string, string> = {}
+          l.forEach(log => { if (log.coachFeedback) fb[log.id] = log.coachFeedback })
+          setFeedbacks(fb)
+        } catch (logErr: any) {
+          console.error('[logs fetch error]', logErr?.code, logErr?.message)
+        }
+      } catch (err: any) {
+        console.error('[athlete fetch error]', err?.code, err?.message)
       } finally {
         setLoading(false)
       }
@@ -175,6 +175,18 @@ export default function CoachAthleteViewPage() {
               {isExpanded && (
                 <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3 text-sm">
+                    {log.startTime && (
+                      <div>
+                        <span className="text-xs font-semibold text-gray-400 uppercase">시작 시간</span>
+                        <p className="text-gray-700 dark:text-gray-300">{log.startTime}</p>
+                      </div>
+                    )}
+                    {log.duration !== null && log.duration !== undefined && (
+                      <div>
+                        <span className="text-xs font-semibold text-gray-400 uppercase">운동 시간</span>
+                        <p className="text-gray-700 dark:text-gray-300">{log.duration}분</p>
+                      </div>
+                    )}
                     {log.sleep !== null && log.sleep !== undefined && (
                       <div>
                         <span className="text-xs font-semibold text-gray-400 uppercase">수면</span>

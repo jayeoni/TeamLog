@@ -24,6 +24,8 @@ export default function AthleteLogPage() {
   const [goal, setGoal] = useState('')
   const [training, setTraining] = useState('')
   const [condition, setCondition] = useState(3)
+  const [startTime, setStartTime] = useState('')
+  const [duration, setDuration] = useState('')
   const [sleep, setSleep] = useState('')
   const [weight, setWeight] = useState('')
   const [painArea, setPainArea] = useState('')
@@ -46,6 +48,8 @@ export default function AthleteLogPage() {
           setGoal(log.goal ?? '')
           setTraining(log.training ?? '')
           setCondition(log.condition ?? 3)
+          setStartTime(log.startTime ?? '')
+          setDuration(log.duration !== null && log.duration !== undefined ? String(log.duration) : '')
           setSleep(log.sleep !== null && log.sleep !== undefined ? String(log.sleep) : '')
           setWeight(log.weight !== null && log.weight !== undefined ? String(log.weight) : '')
           setPainArea(log.painArea ?? '')
@@ -70,6 +74,8 @@ export default function AthleteLogPage() {
         goal: goal.trim(),
         training: training.trim(),
         condition,
+        startTime: startTime || null,
+        duration: duration !== '' ? parseInt(duration, 10) : null,
         sleep: sleep !== '' ? parseFloat(sleep) : null,
         weight: weight !== '' ? parseFloat(weight) : null,
         painArea: painArea.trim(),
@@ -148,6 +154,33 @@ export default function AthleteLogPage() {
           />
         </div>
 
+        {/* Training time */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">시작 시간</label>
+            <input
+              type="time"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              className="input-field"
+              disabled={isFuture}
+            />
+          </div>
+          <div>
+            <label className="label">운동 시간 (분)</label>
+            <input
+              type="number"
+              value={duration}
+              onChange={e => setDuration(e.target.value)}
+              className="input-field"
+              placeholder="90"
+              min="0"
+              max="600"
+              disabled={isFuture}
+            />
+          </div>
+        </div>
+
         {/* Metrics row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -171,9 +204,9 @@ export default function AthleteLogPage() {
               value={weight}
               onChange={e => setWeight(e.target.value)}
               className="input-field"
-              placeholder="68.5"
+              placeholder="50.5"
               step="0.1"
-              min="0"
+              min="20"
               disabled={isFuture}
             />
           </div>
