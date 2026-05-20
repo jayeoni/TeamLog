@@ -37,7 +37,7 @@ export default function SignupPage() {
   const [sport, setSport] = useState('태권도')
   const [specialty, setSpecialty] = useState('')
 
-  const [teamMode, setTeamMode] = useState<'create' | 'join'>('create')
+  const [teamMode, setTeamMode] = useState<'create' | 'join' | 'skip'>('create')
   const [teamName, setTeamName] = useState('')
   const [teamCode, setTeamCode] = useState('')
 
@@ -53,7 +53,7 @@ export default function SignupPage() {
   const handleStep2 = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (role === 'coach') setTeamMode('create')
+    setTeamMode(role === 'coach' ? 'create' : 'skip')
     setStep(3)
   }
 
@@ -109,10 +109,15 @@ export default function SignupPage() {
       setUser({ id: uid, ...userData, teamId })
       navigate(role === 'coach' ? '/coach' : '/athlete', { replace: true })
     } catch (err: any) {
+      console.error('[signup error]', err?.code, err?.message, err)
       if (err.code === 'auth/email-already-in-use') {
         setError('이미 사용 중인 이메일입니다.')
+      } else if (err.code === 'auth/invalid-email') {
+        setError('유효하지 않은 이메일 형식입니다.')
+      } else if (err.code === 'auth/weak-password') {
+        setError('비밀번호는 6자 이상이어야 합니다.')
       } else {
-        setError('회원가입 중 오류가 발생했습니다.')
+        setError(`오류: ${err?.code ?? err?.message ?? '알 수 없는 오류'}`)
       }
     } finally {
       setLoading(false)
