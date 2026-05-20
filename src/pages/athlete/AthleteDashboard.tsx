@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs, orderBy, limit, doc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
-import { todayYMD, formatKoreanDate, formatShortDate } from '../../utils/dateUtils'
+import { todayYMD, formatKoreanDate, formatShortDate, weekStartYMD, monthStartYMD, daysInCurrentMonth } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
 import { PlusCircle, Calendar, MessageSquare, TrendingUp, Flame, Users } from 'lucide-react'
@@ -18,6 +18,7 @@ export default function AthleteDashboard() {
   const [recentLogs, setRecentLogs] = useState<DailyLog[]>([])
   const [streak, setStreak] = useState(0)
   const [weekCount, setWeekCount] = useState(0)
+  const [monthCount, setMonthCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const [joinCode, setJoinCode] = useState('')
@@ -34,7 +35,7 @@ export default function AthleteDashboard() {
           logsRef,
           where('athleteId', '==', user.id),
           orderBy('date', 'desc'),
-          limit(30)
+          limit(62)
         )
         const snap = await getDocs(q)
         const logs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[]
@@ -43,13 +44,10 @@ export default function AthleteDashboard() {
         setTodayLog(tl)
         setRecentLogs(logs.slice(0, 5))
 
-        // Week count (Mon–Sun)
-        const now = new Date()
-        const mon = new Date(now)
-        const day = mon.getDay()
-        mon.setDate(mon.getDate() - (day === 0 ? 6 : day - 1))
-        const monStr = mon.toISOString().slice(0, 10)
+        const monStr = weekStartYMD()
+        const monStart = monthStartYMD()
         setWeekCount(logs.filter(l => l.date >= monStr && l.date <= today).length)
+        setMonthCount(logs.filter(l => l.date >= monStart && l.date <= today).length)
 
         // Streak
         let s = 0
@@ -131,25 +129,57 @@ export default function AthleteDashboard() {
       )}
 
       {/* KPI Row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="card p-4 text-center">
           <Flame size={20} className="mx-auto mb-1 text-orange-500" />
           <div className="text-2xl font-bold text-gray-900 dark:text-white">{streak}</div>
           <div className="text-xs text-gray-400 mt-0.5">연속 기록</div>
         </div>
         <div className="card p-4 text-center">
-          <TrendingUp size={20} className="mx-auto mb-1 text-indigo-500" />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{weekCount}/7</div>
-          <div className="text-xs text-gray-400 mt-0.5">이번 주</div>
-        </div>
-        <div className="card p-4 text-center">
           <MessageSquare size={20} className="mx-auto mb-1 text-emerald-500" />
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {recentLogs.filter(l => l.coachFeedback).length}
           </div>
-          <div className="text-xs text-gray-400 mt-0.5">피드백</div>
+          <div className="text-xs text-gray-400 mt-0.5">코치 피드백</div>
         </div>
       </div>
+
+      {/* Record rate stats */}
+      {(() => {
+        const daysElapsed = new Date().getDate()
+        const totalDays = daysInCurrentMonth()
+        const weekPct = Math.round((weekCount / 7) * 100)
+        const monthPct = Math.round((monthCount / daysElapsed) * 100)
+        return (
+          <div className="card p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-indigo-500" />
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">기록률 통계</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-gray-500 dark:text-gray-400">이번 주</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{weekCount}/7일 · {weekPct}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${weekPct}%` }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-gray-500 dark:text-gray-400">이번 달</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{monthCount}/{daysElapsed}일 경과 · {monthPct}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${monthPct}%` }} />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 text-right">이번 달 총 {totalDays}일</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Today's log */}
       <div className="card p-5">
@@ -229,7 +259,7 @@ export default function AthleteDashboard() {
           <p className="text-sm text-gray-400 text-center py-4">기록이 없습니다.</p>
         ) : (
           <div className="space-y-2">
-            {recentLogs.slice(0, 5).map(log => (
+            {recentLogs.map(log => (
               <button
                 key={log.id}
                 onClick={() => navigate(`/athlete/log/${log.date}`)}

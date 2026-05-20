@@ -58,6 +58,20 @@ export function getMondayOfWeek(date: Date): Date {
   return d
 }
 
+export function weekStartYMD(): string {
+  return toYMD(getMondayOfWeek(new Date()))
+}
+
+export function monthStartYMD(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+export function daysInCurrentMonth(): number {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+}
+
 export function generateTeamCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()
 }

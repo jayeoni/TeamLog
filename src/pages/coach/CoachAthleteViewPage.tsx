@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs, getDoc, orderBy, limit, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
-import { formatKoreanDate } from '../../utils/dateUtils'
+import { formatKoreanDate, weekStartYMD, monthStartYMD, todayYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
 import StampCalendar from '../../components/shared/StampCalendar'
@@ -36,6 +36,7 @@ export default function CoachAthleteViewPage() {
 
         // Fetch logs separately so a missing index doesn't hide the athlete
         try {
+          if (!user.teamId) return
           const logSnap = await getDocs(query(
             collection(db, 'dailyLogs'),
             where('athleteId', '==', athleteId),
@@ -88,6 +89,15 @@ export default function CoachAthleteViewPage() {
     if (log) setExpanded(prev => prev === log.id ? null : log.id)
   }
 
+  const today = todayYMD()
+  const weekStart = weekStartYMD()
+  const monthStart = monthStartYMD()
+  const daysElapsed = new Date().getDate()
+  const weekLogCount = logs.filter(l => l.date >= weekStart && l.date <= today).length
+  const monthLogCount = logs.filter(l => l.date >= monthStart && l.date <= today).length
+  const weekPct = Math.round((weekLogCount / 7) * 100)
+  const monthPct = Math.round((monthLogCount / daysElapsed) * 100)
+
   if (loading) {
     return <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="card h-32 animate-pulse" />)}</div>
   }
@@ -131,6 +141,27 @@ export default function CoachAthleteViewPage() {
         <div className="card p-3 text-center">
           <div className="text-xl font-bold text-orange-500">{logs.filter(l => l.painArea?.trim()).length}</div>
           <div className="text-xs text-gray-400">통증 기록</div>
+        </div>
+      </div>
+      <div className="card p-4 space-y-3">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">기록률 통계</p>
+        <div>
+          <div className="flex justify-between text-xs mb-1.5">
+            <span className="text-gray-500 dark:text-gray-400">이번 주</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{weekLogCount}/7일 · {weekPct}%</span>
+          </div>
+          <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${weekPct}%` }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-xs mb-1.5">
+            <span className="text-gray-500 dark:text-gray-400">이번 달</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{monthLogCount}/{daysElapsed}일 경과 · {monthPct}%</span>
+          </div>
+          <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${monthPct}%` }} />
+          </div>
         </div>
       </div>
 

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
-import { todayYMD, formatKoreanDate } from '../../utils/dateUtils'
+import { todayYMD, formatKoreanDate, weekStartYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
-import { Users, AlertTriangle, CalendarDays, ChevronRight, ClipboardList } from 'lucide-react'
+import { Users, AlertTriangle, CalendarDays, ChevronRight, ClipboardList, TrendingUp } from 'lucide-react'
 import type { AppUser, DailyLog } from '../../types'
 
 export default function CoachDashboard() {
@@ -16,6 +16,7 @@ export default function CoachDashboard() {
 
   const [athletes, setAthletes] = useState<AppUser[]>([])
   const [todayLogs, setTodayLogs] = useState<DailyLog[]>([])
+  const [weekLogs, setWeekLogs] = useState<DailyLog[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function CoachDashboard() {
 
     const fetchData = async () => {
       try {
-        const [athleteSnap, logSnap] = await Promise.all([
+        const [athleteSnap, logSnap, weekSnap] = await Promise.all([
           getDocs(query(
             collection(db, 'users'),
             where('teamId', '==', user.teamId),
@@ -34,10 +35,17 @@ export default function CoachDashboard() {
             where('teamId', '==', user.teamId),
             where('date', '==', today)
           )),
+          getDocs(query(
+            collection(db, 'dailyLogs'),
+            where('teamId', '==', user.teamId),
+            where('date', '>=', weekStartYMD()),
+            where('date', '<=', today)
+          )),
         ])
 
         setAthletes(athleteSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AppUser[])
         setTodayLogs(logSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
+        setWeekLogs(weekSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
       } finally {
         setLoading(false)
       }
@@ -51,6 +59,8 @@ export default function CoachDashboard() {
   const missingCount = athletes.length - writtenCount
   const painCount = todayLogs.filter(l => l.painArea?.trim()).length
   const pendingFeedback = todayLogs.filter(l => !l.coachFeedback).length
+  const weekTotal = athletes.length * 7
+  const weekPct = weekTotal > 0 ? Math.round((weekLogs.length / weekTotal) * 100) : 0
 
   if (loading) {
     return <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="card h-24 animate-pulse" />)}</div>
@@ -94,6 +104,21 @@ export default function CoachDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Team record rate */}
+      {athletes.length > 0 && (
+        <div className="card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={15} className="text-indigo-500" />
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">팀 주간 기록률</h3>
+            <span className="ml-auto text-xs text-gray-400">이번 주 {weekLogs.length}/{weekTotal}건</span>
+          </div>
+          <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${weekPct}%` }} />
+          </div>
+          <p className="text-right text-xs font-semibold text-indigo-600 dark:text-indigo-400">{weekPct}%</p>
+        </div>
+      )}
 
       {/* Quick date navigation */}
       <div className="card p-4">
