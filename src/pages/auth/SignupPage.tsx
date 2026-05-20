@@ -60,33 +60,27 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (role === 'coach' && !teamName.trim()) { setError('팀 이름을 입력해주세요.'); return }
+    if (role === 'athlete' && teamMode === 'join' && !teamCode.trim()) { setError('팀 코드를 입력해주세요.'); return }
+
     setLoading(true)
 
     try {
+      // 1. Create auth user first so subsequent Firestore writes are authenticated
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      const uid = cred.user.uid
       let teamId: string | null = null
 
-      if (role === 'coach') {
-        if (!teamName.trim()) { setError('팀 이름을 입력해주세요.'); setLoading(false); return }
-        const code = generateTeamCode()
-        const teamRef = await addDoc(collection(db, 'teams'), {
-          name: teamName.trim(),
-          code,
-          sport,
-          coachIds: [],
-          createdAt: new Date().toISOString(),
-        })
-        teamId = teamRef.id
-      } else {
-        if (teamMode === 'join') {
-          if (!teamCode.trim()) { setError('팀 코드를 입력해주세요.'); setLoading(false); return }
-          const q = query(collection(db, 'teams'), where('code', '==', teamCode.trim().toUpperCase()))
-          const snap = await getDocs(q)
-          if (snap.empty) { setError('해당 팀 코드를 찾을 수 없습니다.'); setLoading(false); return }
-          teamId = snap.docs[0].id
-        }
+      // 2. For athlete joining: look up team (now authenticated — rules allow read: if isAuth())
+      if (role === 'athlete' && teamMode === 'join') {
+        const q = query(collection(db, 'teams'), where('code', '==', teamCode.trim().toUpperCase()))
+        const snap = await getDocs(q)
+        if (snap.empty) { setError('해당 팀 코드를 찾을 수 없습니다.'); setLoading(false); return }
+        teamId = snap.docs[0].id
       }
 
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      // 3. Create user document (must exist before team creation so rules can read role)
       const userData: Omit<AppUser, 'id'> = {
         name: name.trim(),
         email,
@@ -96,21 +90,23 @@ export default function SignupPage() {
         specialty,
         createdAt: new Date().toISOString(),
       }
+      await setDoc(doc(db, 'users', uid), userData)
 
-      await setDoc(doc(db, 'users', cred.user.uid), userData)
-
-      if (role === 'coach' && teamId) {
-        const teamSnap = await getDocs(query(collection(db, 'teams'), where('__name__', '==', teamId)))
-        if (!teamSnap.empty) {
-          const teamData = teamSnap.docs[0].data()
-          await setDoc(doc(db, 'teams', teamId), {
-            ...teamData,
-            coachIds: [...(teamData.coachIds ?? []), cred.user.uid],
-          })
-        }
+      // 4. For coach: create team (rules check getUserData().role == 'coach', so user doc must exist first)
+      if (role === 'coach') {
+        const code = generateTeamCode()
+        const teamRef = await addDoc(collection(db, 'teams'), {
+          name: teamName.trim(),
+          code,
+          sport,
+          coachIds: [uid],
+          createdAt: new Date().toISOString(),
+        })
+        teamId = teamRef.id
+        await setDoc(doc(db, 'users', uid), { ...userData, teamId })
       }
 
-      setUser({ id: cred.user.uid, ...userData })
+      setUser({ id: uid, ...userData, teamId })
       navigate(role === 'coach' ? '/coach' : '/athlete', { replace: true })
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
