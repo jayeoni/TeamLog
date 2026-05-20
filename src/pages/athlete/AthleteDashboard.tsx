@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, limit, doc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { todayYMD, formatKoreanDate, formatShortDate } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
-import { PlusCircle, Calendar, MessageSquare, TrendingUp, Flame } from 'lucide-react'
+import { PlusCircle, Calendar, MessageSquare, TrendingUp, Flame, Users } from 'lucide-react'
 import type { DailyLog } from '../../types'
 
 export default function AthleteDashboard() {
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   const navigate = useNavigate()
   const today = todayYMD()
 
@@ -19,6 +19,10 @@ export default function AthleteDashboard() {
   const [streak, setStreak] = useState(0)
   const [weekCount, setWeekCount] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  const [joinCode, setJoinCode] = useState('')
+  const [joinLoading, setJoinLoading] = useState(false)
+  const [joinError, setJoinError] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -64,6 +68,24 @@ export default function AthleteDashboard() {
     fetchData()
   }, [user, today])
 
+  const handleJoinTeam = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || !joinCode.trim()) return
+    setJoinLoading(true)
+    setJoinError('')
+    try {
+      const snap = await getDocs(query(collection(db, 'teams'), where('code', '==', joinCode.trim().toUpperCase())))
+      if (snap.empty) { setJoinError('해당 팀 코드를 찾을 수 없습니다.'); return }
+      const teamId = snap.docs[0].id
+      await setDoc(doc(db, 'users', user.id), { teamId }, { merge: true })
+      setUser({ ...user, teamId })
+    } catch {
+      setJoinError('팀 참가에 실패했습니다.')
+    } finally {
+      setJoinLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
@@ -83,6 +105,30 @@ export default function AthleteDashboard() {
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatKoreanDate(today)}</p>
       </div>
+
+      {/* Join team banner — shown only when athlete has no team */}
+      {!user?.teamId && (
+        <div className="card p-5 border-2 border-indigo-200 dark:border-indigo-800">
+          <div className="flex items-center gap-2 mb-3">
+            <Users size={18} className="text-indigo-500" />
+            <h3 className="font-semibold text-gray-900 dark:text-white">팀에 참가하기</h3>
+          </div>
+          <form onSubmit={handleJoinTeam} className="flex gap-2">
+            <input
+              type="text"
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase())}
+              className="input-field flex-1 font-mono tracking-widest"
+              placeholder="팀 코드 입력"
+              maxLength={6}
+            />
+            <button type="submit" disabled={joinLoading || !joinCode.trim()} className="btn-primary px-4">
+              {joinLoading ? '...' : '참가'}
+            </button>
+          </form>
+          {joinError && <p className="text-sm text-red-500 mt-2">{joinError}</p>}
+        </div>
+      )}
 
       {/* KPI Row */}
       <div className="grid grid-cols-3 gap-3">
