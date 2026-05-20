@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { auth } from '../../firebase'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import {
   LayoutDashboard,
@@ -20,6 +22,14 @@ interface Props {
 export default function Sidebar({ open, onClose }: Props) {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const [teamName, setTeamName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user?.teamId) { setTeamName(null); return }
+    getDoc(doc(db, 'teams', user.teamId)).then(snap => {
+      setTeamName(snap.exists() ? (snap.data().name as string) : null)
+    })
+  }, [user?.teamId])
 
   const isCoach = user?.role === 'coach'
   const athleteNav = [
@@ -76,6 +86,9 @@ export default function Sidebar({ open, onClose }: Props) {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {isCoach ? '코치' : '선수'} · {user?.sport || '종목 미설정'}
             </p>
+            {teamName && (
+              <p className="text-xs text-indigo-500 dark:text-indigo-400 font-medium truncate">{teamName}</p>
+            )}
           </div>
         </div>
       </div>
