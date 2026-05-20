@@ -24,6 +24,7 @@ VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
+VITE_KAKAO_JS_KEY=          # Kakao JavaScript App Key — enables KakaoTalk share on log page
 ```
 
 ## Architecture

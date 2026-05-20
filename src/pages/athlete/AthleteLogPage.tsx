@@ -5,7 +5,8 @@ import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { formatKoreanDate, todayYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
-import { Save, ChevronLeft, MessageSquare } from 'lucide-react'
+import { Save, ChevronLeft, MessageSquare, Share2 } from 'lucide-react'
+import { shareLogToKakao } from '../../utils/kakaoShare'
 import type { DailyLog } from '../../types'
 
 export default function AthleteLogPage() {
@@ -245,6 +246,15 @@ export default function AthleteLogPage() {
           >
             <Save size={16} />
             {saved ? '저장됨 ✓' : saving ? '저장 중...' : existing ? '일지 수정' : '일지 저장'}
+          </button>
+        )}
+        {existing && !isFuture && (
+          <button
+            onClick={() => shareLogToKakao(existing)}
+            className="btn-outline w-full flex items-center justify-center gap-2"
+          >
+            <Share2 size={16} />
+            카카오톡으로 공유
           </button>
         )}
       </div>
