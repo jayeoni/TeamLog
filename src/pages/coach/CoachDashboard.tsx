@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
-import { todayYMD, formatKoreanDate, weekStartYMD } from '../../utils/dateUtils'
+import { toYMD, todayYMD, formatKoreanDate, weekStartYMD, parseYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
 import { Users, AlertTriangle, CalendarDays, ChevronRight, ClipboardList, TrendingUp } from 'lucide-react'
@@ -16,7 +16,7 @@ export default function CoachDashboard() {
 
   const [athletes, setAthletes] = useState<AppUser[]>([])
   const [todayLogs, setTodayLogs] = useState<DailyLog[]>([])
-  const [weekLogs, setWeekLogs] = useState<DailyLog[]>([])
+  const [recentLogs, setRecentLogs] = useState<DailyLog[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,14 +38,14 @@ export default function CoachDashboard() {
           getDocs(query(
             collection(db, 'dailyLogs'),
             where('teamId', '==', user.teamId),
-            where('date', '>=', weekStartYMD()),
+            where('date', '>=', toYMD(new Date(Date.now() - 6 * 86400000))),
             where('date', '<=', today)
           )),
         ])
 
         setAthletes(athleteSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AppUser[])
         setTodayLogs(logSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
-        setWeekLogs(weekSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
+        setRecentLogs(weekSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
       } finally {
         setLoading(false)
       }
@@ -59,8 +59,22 @@ export default function CoachDashboard() {
   const missingCount = athletes.length - writtenCount
   const painCount = todayLogs.filter(l => l.painArea?.trim()).length
   const pendingFeedback = todayLogs.filter(l => !l.coachFeedback).length
+  const weekStart = weekStartYMD()
+  const weekLogs = recentLogs.filter(l => l.date >= weekStart)
   const weekTotal = athletes.length * 7
   const weekPct = weekTotal > 0 ? Math.round((weekLogs.length / weekTotal) * 100) : 0
+
+  const lastLogMap: Record<string, string> = {}
+  recentLogs.forEach(l => {
+    if (!lastLogMap[l.athleteId] || l.date > lastLogMap[l.athleteId]) {
+      lastLogMap[l.athleteId] = l.date
+    }
+  })
+  const yesterday = toYMD(new Date(Date.now() - 86400000))
+  const missingAthletes = athletes.filter(a => {
+    const last = lastLogMap[a.id]
+    return !last || last < yesterday
+  })
 
   if (loading) {
     return <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="card h-24 animate-pulse" />)}</div>
@@ -104,6 +118,42 @@ export default function CoachDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Missing-log alert */}
+      {missingAthletes.length > 0 && (
+        <div className="card p-4 border border-orange-200 dark:border-orange-800/50">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle size={15} className="text-orange-500" />
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">미작성 알림</h3>
+            <span className="ml-auto text-xs text-orange-500 font-semibold">{missingAthletes.length}명</span>
+          </div>
+          <div className="space-y-1">
+            {missingAthletes.map(a => {
+              const last = lastLogMap[a.id]
+              const daysAgo = last
+                ? Math.round((parseYMD(today).getTime() - parseYMD(last).getTime()) / 86400000)
+                : null
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => navigate(`/coach/athlete/${a.id}`)}
+                  className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{a.name?.charAt(0) ?? '?'}</span>
+                    </div>
+                    <span className="text-sm text-gray-900 dark:text-white">{a.name}</span>
+                  </div>
+                  <span className="text-xs text-orange-500 font-semibold">
+                    {daysAgo !== null ? `${daysAgo}일 미작성` : '기록 없음'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Team record rate */}
       {athletes.length > 0 && (
