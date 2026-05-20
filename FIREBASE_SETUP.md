@@ -14,7 +14,7 @@
 ## 3. Firestore Database 설정
 1. 좌측 메뉴 → Build → Firestore Database
 2. "데이터베이스 만들기" 클릭
-3. 리전: `asia-northeast3 (서울)` 선택 권장
+3. 리전: `asia-northeast3 (Seoul)` 선택 권장
 4. 보안 규칙: "프로덕션 모드"로 시작
 
 ## 4. 보안 규칙 적용
