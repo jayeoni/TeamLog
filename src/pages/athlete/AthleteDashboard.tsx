@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store/authStore'
 import { todayYMD, formatKoreanDate, formatShortDate, weekStartYMD, monthStartYMD, daysInCurrentMonth } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
+import ConditionChart from '../../components/shared/ConditionChart'
 import { PlusCircle, Calendar, MessageSquare, TrendingUp, Flame, Users } from 'lucide-react'
 import type { DailyLog } from '../../types'
 
@@ -16,6 +17,7 @@ export default function AthleteDashboard() {
 
   const [todayLog, setTodayLog] = useState<DailyLog | null | undefined>(undefined)
   const [recentLogs, setRecentLogs] = useState<DailyLog[]>([])
+  const [chartLogs, setChartLogs] = useState<DailyLog[]>([])
   const [streak, setStreak] = useState(0)
   const [weekCount, setWeekCount] = useState(0)
   const [monthCount, setMonthCount] = useState(0)
@@ -43,6 +45,7 @@ export default function AthleteDashboard() {
         const tl = logs.find(l => l.date === today) ?? null
         setTodayLog(tl)
         setRecentLogs(logs.slice(0, 5))
+        setChartLogs(logs.slice(0, 30))
 
         const monStr = weekStartYMD()
         const monStart = monthStartYMD()
@@ -180,6 +183,9 @@ export default function AthleteDashboard() {
           </div>
         )
       })()}
+
+      {/* Condition graph */}
+      <ConditionChart logs={chartLogs} />
 
       {/* Today's log */}
       <div className="card p-5">

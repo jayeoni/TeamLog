@@ -7,6 +7,7 @@ import { formatKoreanDate, weekStartYMD, monthStartYMD, todayYMD } from '../../u
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
 import StampCalendar from '../../components/shared/StampCalendar'
+import ConditionChart from '../../components/shared/ConditionChart'
 import { ChevronLeft, ChevronDown, ChevronUp, Send } from 'lucide-react'
 import type { AppUser, DailyLog, CalendarStamp } from '../../types'
 
@@ -164,6 +165,9 @@ export default function CoachAthleteViewPage() {
           </div>
         </div>
       </div>
+
+      {/* Condition graph */}
+      <ConditionChart logs={logs} />
 
       {/* Calendar */}
       <StampCalendar
