@@ -94,9 +94,6 @@ export default function TopBar({ onMenuClick }: Props) {
       <div className="flex items-center gap-3 font-mono text-[11px] text-[var(--color-pulse-sub)]">
         <span className="hidden md:flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-pulse-ok)]" />
-          <span>firestore</span>
-        </span>
-        <span className="hidden lg:inline">
           {ymd} <span className="text-[var(--color-pulse-ink)]">{dow} {time}</span>
         </span>
         <button

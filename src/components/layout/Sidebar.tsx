@@ -76,7 +76,7 @@ export default function Sidebar({ open, onClose }: Props) {
             style={{ boxShadow: '0 0 8px var(--color-pulse-accent)' }}
           />
           <span className="font-mono text-[13px] font-semibold text-[var(--color-pulse-ink)]">teamlog</span>
-          <span className="font-mono text-[10px] text-[var(--color-pulse-sub)] ml-1">v2.6</span>
+          <span className="font-mono text-[10px] text-[var(--color-pulse-sub)] ml-1">beta</span>
         </div>
         <button onClick={onClose} className="lg:hidden btn-ghost !p-1.5">
           <X size={16} />

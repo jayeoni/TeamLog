@@ -6,36 +6,46 @@ interface Props {
 
 const labels = ['', '매우 나쁨', '나쁨', '보통', '좋음', '매우 좋음']
 
-const colors = [
-  '',
-  'text-red-500',
-  'text-orange-500',
-  'text-yellow-500',
-  'text-lime-500',
-  'text-emerald-500',
-]
-
+/**
+ * PULSE condition rating — 5 square cells filled chartreuse.
+ * API unchanged from the original (value, onChange, size).
+ */
 export default function ConditionStars({ value, onChange, size = 'md' }: Props) {
-  const sz = size === 'sm' ? 'text-base' : 'text-xl'
+  const cell = size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'
+  const gap = size === 'sm' ? 'gap-[3px]' : 'gap-1'
+  const labelSize = size === 'sm' ? 'text-[10px]' : 'text-[11px]'
+  const interactive = !!onChange
 
   return (
-    <div className="flex items-center gap-1.5">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          disabled={!onChange}
-          onClick={() => onChange?.(n)}
-          className={`${sz} transition-transform duration-100 ${onChange ? 'hover:scale-125 cursor-pointer' : 'cursor-default'} ${
-            n <= value ? colors[value] : 'text-gray-300 dark:text-gray-600'
-          }`}
-        >
-          ●
-        </button>
-      ))}
+    <div className={`inline-flex items-center ${gap}`}>
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = n <= value
+        return (
+          <button
+            key={n}
+            type="button"
+            disabled={!interactive}
+            onClick={() => onChange?.(n)}
+            aria-label={`컨디션 ${n}점`}
+            className={[
+              cell,
+              'rounded-[2px] transition-all duration-100',
+              filled
+                ? 'bg-[var(--color-pulse-accent)]'
+                : 'bg-transparent border border-[var(--color-pulse-line2)]',
+              interactive
+                ? 'cursor-pointer hover:scale-110'
+                : 'cursor-default',
+            ].join(' ')}
+          />
+        )
+      })}
       {value > 0 && (
-        <span className={`text-xs font-medium ${colors[value]} ml-1`}>
-          {labels[value]}
+        <span
+          className={`font-mono ${labelSize} ml-2 text-[var(--color-pulse-sub)] tabular-nums`}
+        >
+          {value}.0
+          <span className="text-[var(--color-pulse-sub2)] ml-1 font-sans">{labels[value]}</span>
         </span>
       )}
     </div>
