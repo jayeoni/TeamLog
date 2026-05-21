@@ -5,7 +5,7 @@ import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { formatKoreanDate, todayYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
-import { Save, ChevronLeft, MessageSquare, Share2 } from 'lucide-react'
+import { Save, ChevronLeft, Share2 } from 'lucide-react'
 import { shareLogToKakao } from '../../utils/kakaoShare'
 import type { DailyLog } from '../../types'
 
@@ -50,9 +50,9 @@ export default function AthleteLogPage() {
           setTraining(log.training ?? '')
           setCondition(log.condition ?? 3)
           setStartTime(log.startTime ?? '')
-          setDuration(log.duration !== null && log.duration !== undefined ? String(log.duration) : '')
-          setSleep(log.sleep !== null && log.sleep !== undefined ? String(log.sleep) : '')
-          setWeight(log.weight !== null && log.weight !== undefined ? String(log.weight) : '')
+          setDuration(log.duration != null ? String(log.duration) : '')
+          setSleep(log.sleep != null ? String(log.sleep) : '')
+          setWeight(log.weight != null ? String(log.weight) : '')
           setPainArea(log.painArea ?? '')
           setSelfReview(log.selfReview ?? '')
         }
@@ -96,7 +96,15 @@ export default function AthleteLogPage() {
           status: 'submitted',
           createdAt: new Date().toISOString(),
         })
-        setExisting({ id: ref.id, ...payload, coachFeedback: null, coachFeedbackAt: null, coachId: null, status: 'submitted', createdAt: payload.updatedAt })
+        setExisting({
+          id: ref.id,
+          ...payload,
+          coachFeedback: null,
+          coachFeedbackAt: null,
+          coachId: null,
+          status: 'submitted',
+          createdAt: payload.updatedAt,
+        })
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -105,175 +113,177 @@ export default function AthleteLogPage() {
     }
   }
 
-  if (loading) {
-    return <div className="card h-96 animate-pulse" />
-  }
+  if (loading) return <div className="card h-96 animate-pulse" />
 
   return (
-    <div className="space-y-4 max-w-lg mx-auto">
+    <div className="space-y-4 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <button onClick={() => navigate(-1)} className="btn-ghost p-2 -ml-2">
-          <ChevronLeft size={20} />
+        <button onClick={() => navigate(-1)} className="btn-ghost !p-1.5 -ml-1">
+          <ChevronLeft size={18} />
         </button>
-        <div>
-          <h2 className="font-semibold text-gray-900 dark:text-white">{formatKoreanDate(ymd)}</h2>
-          {isFuture && <p className="text-xs text-orange-500">미래 날짜는 작성할 수 없습니다.</p>}
+        <div className="flex-1 min-w-0">
+          <div className="kicker">$ log.edit --date={ymd}</div>
+          <div className="font-mono text-lg font-semibold tracking-tight text-[var(--color-pulse-ink)]">
+            {formatKoreanDate(ymd)}
+          </div>
         </div>
+        {existing && <span className="badge-green">submitted</span>}
+        {isFuture && <span className="badge-orange">미래 날짜</span>}
       </div>
 
       {/* Form */}
-      <div className="card p-5 space-y-5">
-        {/* Condition */}
-        <div>
-          <label className="label">오늘의 컨디션</label>
+      <div className="card p-5 space-y-0">
+        <Row code="00" kicker="condition" hint="// 오늘의 컨디션 1–5">
           <ConditionStars value={condition} onChange={isFuture ? undefined : setCondition} />
-        </div>
+        </Row>
 
-        {/* Goal */}
-        <div>
-          <label className="label">오늘의 목표</label>
+        <Row code="01" kicker="goal" hint="// 오늘 이루고 싶은 것">
           <input
             type="text"
             value={goal}
-            onChange={e => setGoal(e.target.value)}
+            onChange={(e) => setGoal(e.target.value)}
             className="input-field"
-            placeholder="오늘 이루고 싶은 것을 적어주세요"
+            placeholder="목표를 입력하세요"
             disabled={isFuture}
           />
-        </div>
+        </Row>
 
-        {/* Training */}
-        <div>
-          <label className="label">훈련 내용</label>
+        <Row code="02" kicker="training" hint="// 어떤 훈련을 했나요">
           <textarea
             value={training}
-            onChange={e => setTraining(e.target.value)}
-            className="input-field min-h-[100px] resize-none"
-            placeholder="오늘 어떤 훈련을 했나요?"
+            onChange={(e) => setTraining(e.target.value)}
+            className="input-field min-h-[96px] resize-none"
+            placeholder="훈련 내용"
             disabled={isFuture}
           />
-        </div>
+        </Row>
 
-        {/* Training time */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">시작 시간</label>
+        <Row code="03" kicker="time" hint="// 시작 시각 / 운동 시간(분)">
+          <div className="grid grid-cols-2 gap-2">
             <input
               type="time"
               value={startTime}
-              onChange={e => setStartTime(e.target.value)}
-              className="input-field"
+              onChange={(e) => setStartTime(e.target.value)}
+              className="input-field input-mono"
               disabled={isFuture}
             />
-          </div>
-          <div>
-            <label className="label">운동 시간 (분)</label>
             <input
               type="number"
               value={duration}
-              onChange={e => setDuration(e.target.value)}
-              className="input-field"
+              onChange={(e) => setDuration(e.target.value)}
+              className="input-field input-mono"
               placeholder="90"
               min="0"
               max="600"
               disabled={isFuture}
             />
           </div>
-        </div>
+        </Row>
 
-        {/* Metrics row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label">수면 시간 (h)</label>
+        <Row code="04" kicker="metrics" hint="// 수면(h) / 체중(kg)">
+          <div className="grid grid-cols-2 gap-2">
             <input
               type="number"
               value={sleep}
-              onChange={e => setSleep(e.target.value)}
-              className="input-field"
+              onChange={(e) => setSleep(e.target.value)}
+              className="input-field input-mono"
               placeholder="7.5"
               step="0.5"
               min="0"
               max="24"
               disabled={isFuture}
             />
-          </div>
-          <div>
-            <label className="label">체중 (kg)</label>
             <input
               type="number"
               value={weight}
-              onChange={e => setWeight(e.target.value)}
-              className="input-field"
+              onChange={(e) => setWeight(e.target.value)}
+              className="input-field input-mono"
               placeholder="50.5"
               step="0.1"
               min="20"
               disabled={isFuture}
             />
           </div>
-        </div>
+        </Row>
 
-        {/* Pain */}
-        <div>
-          <label className="label">통증 / 부상 부위</label>
+        <Row code="05" kicker="pain.area" hint="// 통증·부상 부위 (없으면 비워두세요)">
           <input
             type="text"
             value={painArea}
-            onChange={e => setPainArea(e.target.value)}
+            onChange={(e) => setPainArea(e.target.value)}
             className="input-field"
-            placeholder="예: 왼쪽 무릎 통증 (없으면 비워두세요)"
+            placeholder="예: 왼쪽 무릎"
             disabled={isFuture}
           />
-        </div>
+        </Row>
 
-        {/* Self review */}
-        <div>
-          <label className="label">자기 평가</label>
+        <Row code="06" kicker="self.review" hint="// 오늘 스스로의 평가">
           <textarea
             value={selfReview}
-            onChange={e => setSelfReview(e.target.value)}
+            onChange={(e) => setSelfReview(e.target.value)}
             className="input-field min-h-[80px] resize-none"
-            placeholder="오늘 훈련을 스스로 어떻게 평가하나요?"
+            placeholder="자기 평가"
             disabled={isFuture}
           />
-        </div>
+        </Row>
 
+        {/* Actions */}
         {!isFuture && (
-          <button
-            onClick={handleSave}
-            disabled={saving || saved}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            <Save size={16} />
-            {saved ? '저장됨 ✓' : saving ? '저장 중...' : existing ? '일지 수정' : '일지 저장'}
-          </button>
-        )}
-        {existing && !isFuture && (
-          <button
-            onClick={() => shareLogToKakao(existing)}
-            className="btn-outline w-full flex items-center justify-center gap-2"
-          >
-            <Share2 size={16} />
-            카카오톡으로 공유
-          </button>
+          <div className="flex flex-wrap items-center gap-2 pt-4 mt-2 border-t hairline">
+            <button
+              onClick={handleSave}
+              disabled={saving || saved}
+              className="btn-primary"
+            >
+              <Save size={13} />
+              {saved ? 'saved ✓' : saving ? 'saving...' : existing ? 'update_log()' : 'save_log()'}
+            </button>
+            {existing && (
+              <button onClick={() => shareLogToKakao(existing)} className="btn-outline">
+                <Share2 size={13} />
+                share_kakao()
+              </button>
+            )}
+            <span className="ml-auto font-mono text-[10px] text-[var(--color-pulse-sub2)]">
+              ⌘S to save
+            </span>
+          </div>
         )}
       </div>
 
       {/* Coach feedback */}
       {existing?.coachFeedback && (
         <div className="card p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquare size={16} className="text-indigo-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">코치 피드백</h3>
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="label !mb-0">coach.feedback</span>
+            {existing.coachFeedbackAt && (
+              <span className="font-mono text-[10px] text-[var(--color-pulse-sub2)]">
+                {new Date(existing.coachFeedbackAt).toLocaleDateString('ko-KR')}
+              </span>
+            )}
           </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{existing.coachFeedback}</p>
-          {existing.coachFeedbackAt && (
-            <p className="text-xs text-gray-400 mt-2">
-              {new Date(existing.coachFeedbackAt).toLocaleDateString('ko-KR')}
-            </p>
-          )}
+          <p className="text-sm text-[var(--color-pulse-ink)] leading-relaxed">{existing.coachFeedback}</p>
         </div>
       )}
+    </div>
+  )
+}
+
+function Row({
+  code, kicker, hint, children,
+}: { code: string; kicker: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[140px_1fr] gap-5 py-3 border-t hairline first:border-t-0 first:pt-0">
+      <div>
+        <div className="font-mono text-[10px] text-[var(--color-pulse-sub)]">
+          <span className="text-[var(--color-pulse-sub2)]">[{code}]</span> {kicker}
+        </div>
+        {hint && (
+          <div className="font-mono text-[9px] text-[var(--color-pulse-sub2)] mt-1 leading-relaxed">{hint}</div>
+        )}
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }
