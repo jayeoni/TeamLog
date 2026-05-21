@@ -2,11 +2,40 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* ──────────────────────────────────────────────────────────────
+   PULSE — design tokens
+   Data-terminal aesthetic: dense grid, mono labels, chartreuse accent.
+   Dark is the canonical mode; light is the inversion.
+   ────────────────────────────────────────────────────────────── */
 @theme {
-  --font-sans: "Noto Sans KR", system-ui, sans-serif;
-  --color-brand-50: #eef2ff;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
+  --font-sans: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  /* Accents (shared across modes) */
+  --color-brand-50:  #F4FBC9;
+  --color-brand-100: #E8F89A;
+  --color-brand-400: #D4F560;
+  --color-brand-500: #C7F23A;  /* primary accent */
+  --color-brand-600: #A8D820;
+  --color-brand-700: #86AE19;
+
+  /* Surfaces — Light */
+  --color-pulse-bg:     #F6F6F4;
+  --color-pulse-panel:  #FFFFFF;
+  --color-pulse-panel2: #FAFAF8;
+  --color-pulse-ink:    #0A0B0F;
+  --color-pulse-sub:    #6E7382;
+  --color-pulse-sub2:   #A0A4B0;
+  --color-pulse-line:   rgba(10, 11, 15, 0.08);
+  --color-pulse-line2:  rgba(10, 11, 15, 0.14);
+  --color-pulse-hover:  rgba(10, 11, 15, 0.04);
+
+  /* Semantic accents */
+  --color-pulse-accent:    #C7F23A;
+  --color-pulse-accent-ink: #0A0B0F;
+  --color-pulse-ok:        #5BE0B6;
+  --color-pulse-warn:      #FF7A4D;
+  --color-pulse-cool:      #5BA8FF;
 }
 
 @layer base {
@@ -15,251 +44,270 @@
     box-sizing: border-box;
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     margin: 0;
   }
 
   body {
-    background-color: #f9fafb;
-    color: #111827;
-    font-family: "Noto Sans KR", system-ui, sans-serif;
+    background-color: var(--color-pulse-bg);
+    color: var(--color-pulse-ink);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Dark surface overrides */
+  .dark {
+    --color-pulse-bg:     #0A0B0F;
+    --color-pulse-panel:  #11131A;
+    --color-pulse-panel2: #0F1117;
+    --color-pulse-ink:    #E6E8EC;
+    --color-pulse-sub:    #7B8194;
+    --color-pulse-sub2:   #4F5564;
+    --color-pulse-line:   rgba(255, 255, 255, 0.07);
+    --color-pulse-line2:  rgba(255, 255, 255, 0.14);
+    --color-pulse-hover:  rgba(255, 255, 255, 0.05);
   }
 
   .dark body {
-    background-color: #030712;
-    color: #f3f4f6;
+    background-color: var(--color-pulse-bg);
+    color: var(--color-pulse-ink);
   }
 
+  /* Hairline scrollbars match the grid */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-
   ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 9999px;
-  }
-
-  .dark ::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: var(--color-pulse-line2);
+    border-radius: 0;
   }
 }
 
 @layer components {
+  /* ───── Cards & surfaces ───── */
   .card {
-    background-color: white;
-    border-radius: 1rem;
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-pulse-panel);
+    border: 1px solid var(--color-pulse-line);
+    border-radius: 6px;
   }
 
-  .dark .card {
-    background-color: #111827;
-    border-color: #1f2937;
+  .card-flat {
+    background-color: var(--color-pulse-panel2);
+    border: 1px solid var(--color-pulse-line);
+    border-radius: 4px;
   }
 
+  /* ───── Buttons ───── */
   .btn-primary {
-    background-color: #4f46e5;
-    color: white;
-    font-weight: 600;
-    border-radius: 0.75rem;
-    padding: 0.625rem 1rem;
-    transition: background-color 150ms;
+    background-color: var(--color-pulse-accent);
+    color: var(--color-pulse-accent-ink);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 0.5rem 0.875rem;
+    border: 0;
     cursor: pointer;
-    border: none;
+    transition: filter 120ms;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
   }
-
   .btn-primary:hover:not(:disabled) {
-    background-color: #4338ca;
+    filter: brightness(1.08);
   }
-
   .btn-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: #6b7280;
-    border-radius: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    transition: background-color 150ms;
-    cursor: pointer;
-    border: none;
-  }
-
-  .btn-ghost:hover {
-    background-color: #f3f4f6;
-    color: #111827;
-  }
-
-  .dark .btn-ghost {
-    color: #9ca3af;
-  }
-
-  .dark .btn-ghost:hover {
-    background-color: #1f2937;
-    color: #f3f4f6;
   }
 
   .btn-outline {
     background: transparent;
-    border: 1px solid #d1d5db;
-    color: #374151;
+    border: 1px solid var(--color-pulse-line2);
+    color: var(--color-pulse-ink);
+    font-family: var(--font-mono);
     font-weight: 500;
-    border-radius: 0.75rem;
-    padding: 0.625rem 1rem;
-    transition: background-color 150ms;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 0.5rem 0.875rem;
     cursor: pointer;
+    transition: background-color 120ms;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
   }
-
   .btn-outline:hover {
-    background-color: #f3f4f6;
+    background-color: var(--color-pulse-hover);
   }
 
-  .dark .btn-outline {
-    border-color: #374151;
-    color: #d1d5db;
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-pulse-sub);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 0.4rem 0.625rem;
+    cursor: pointer;
+    transition: background-color 120ms, color 120ms;
+    border: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-pulse-hover);
+    color: var(--color-pulse-ink);
   }
 
-  .dark .btn-outline:hover {
-    background-color: #1f2937;
+  .btn-danger {
+    background: transparent;
+    border: 1px solid color-mix(in oklab, var(--color-pulse-warn) 40%, transparent);
+    color: var(--color-pulse-warn);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    padding: 0.5rem 0.875rem;
+    cursor: pointer;
+    transition: background-color 120ms;
+  }
+  .btn-danger:hover {
+    background-color: color-mix(in oklab, var(--color-pulse-warn) 12%, transparent);
   }
 
+  /* ───── Inputs ───── */
   .input-field {
     width: 100%;
-    background-color: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    color: #111827;
-    transition: all 150ms;
+    background-color: var(--color-pulse-bg);
+    border: 1px solid var(--color-pulse-line2);
+    border-radius: 4px;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    font-family: var(--font-sans);
+    color: var(--color-pulse-ink);
     outline: none;
+    transition: border-color 120ms, box-shadow 120ms;
   }
-
   .input-field::placeholder {
-    color: #9ca3af;
+    color: var(--color-pulse-sub2);
   }
-
   .input-field:focus {
-    outline: none;
-    ring: 2px solid #6366f1;
-    border-color: transparent;
-    box-shadow: 0 0 0 2px #6366f1;
+    border-color: var(--color-pulse-accent);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-pulse-accent) 25%, transparent);
   }
 
-  .dark .input-field {
-    background-color: #1f2937;
-    border-color: #374151;
-    color: #f3f4f6;
+  /* Mono-flavored input (codes, jersey numbers, team codes) */
+  .input-mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
   }
 
-  .dark .input-field::placeholder {
-    color: #6b7280;
-  }
-
+  /* ───── Labels ───── */
   .label {
     display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--color-pulse-sub);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
     margin-bottom: 0.375rem;
   }
 
-  .dark .label {
-    color: #9ca3af;
+  /* Section heading for `$ command` style page intros */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-pulse-ok);
+    letter-spacing: 0.02em;
+  }
+  .kicker-muted {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-pulse-sub);
+    letter-spacing: 0.02em;
   }
 
-  .badge-green {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background-color: #d1fae5;
-    color: #065f46;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-  }
-
-  .dark .badge-green {
-    background-color: rgba(6, 78, 59, 0.3);
-    color: #34d399;
-  }
-
-  .badge-orange {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background-color: #ffedd5;
-    color: #9a3412;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-  }
-
-  .dark .badge-orange {
-    background-color: rgba(124, 45, 18, 0.3);
-    color: #fb923c;
-  }
-
-  .badge-gray {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background-color: #f3f4f6;
-    color: #6b7280;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-  }
-
-  .dark .badge-gray {
-    background-color: #1f2937;
-    color: #9ca3af;
-  }
-
-  .badge-blue {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background-color: #dbeafe;
-    color: #1e40af;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-  }
-
-  .dark .badge-blue {
-    background-color: rgba(30, 58, 138, 0.3);
-    color: #60a5fa;
-  }
-
+  /* ───── Badges / pills (mono, tinted) ───── */
+  .badge-green,
+  .badge-orange,
+  .badge-gray,
+  .badge-blue,
   .badge-red {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    background-color: #fee2e2;
-    color: #991b1b;
-    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
     font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    border: 1px solid;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
   }
 
-  .dark .badge-red {
-    background-color: rgba(153, 27, 27, 0.3);
-    color: #f87171;
+  .badge-green {
+    background-color: color-mix(in oklab, var(--color-pulse-ok) 14%, transparent);
+    color: var(--color-pulse-ok);
+    border-color: color-mix(in oklab, var(--color-pulse-ok) 24%, transparent);
   }
+  .badge-orange,
+  .badge-red {
+    background-color: color-mix(in oklab, var(--color-pulse-warn) 14%, transparent);
+    color: var(--color-pulse-warn);
+    border-color: color-mix(in oklab, var(--color-pulse-warn) 24%, transparent);
+  }
+  .badge-blue {
+    background-color: color-mix(in oklab, var(--color-pulse-cool) 14%, transparent);
+    color: var(--color-pulse-cool);
+    border-color: color-mix(in oklab, var(--color-pulse-cool) 24%, transparent);
+  }
+  .badge-gray {
+    background-color: color-mix(in oklab, var(--color-pulse-sub) 12%, transparent);
+    color: var(--color-pulse-sub);
+    border-color: color-mix(in oklab, var(--color-pulse-sub) 20%, transparent);
+  }
+  .badge-accent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    background-color: var(--color-pulse-accent);
+    color: var(--color-pulse-accent-ink);
+    letter-spacing: 0.04em;
+  }
+
+  /* ───── Misc PULSE primitives ───── */
+  .hairline {
+    border-color: var(--color-pulse-line);
+  }
+  .hairline-strong {
+    border-color: var(--color-pulse-line2);
+  }
+
+  /* Caret used in $ command-line headings */
+  .caret::after {
+    content: "▍";
+    display: inline-block;
+    margin-left: 2px;
+    animation: pulse-blink 1s steps(1) infinite;
+  }
+}
+
+@keyframes pulse-blink {
+  50% { opacity: 0; }
 }
