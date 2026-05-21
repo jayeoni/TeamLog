@@ -19,7 +19,7 @@ export default function AthleteCalendarPage() {
       try {
         const q = query(collection(db, 'dailyLogs'), where('athleteId', '==', user.id))
         const snap = await getDocs(q)
-        const s: CalendarStamp[] = snap.docs.map(d => {
+        const s: CalendarStamp[] = snap.docs.map((d) => {
           const data = d.data()
           return {
             date: data.date,
@@ -42,22 +42,36 @@ export default function AthleteCalendarPage() {
   }
 
   if (loading) {
-    return <div className="card h-80 animate-pulse" />
+    return <div className="card h-96 animate-pulse" />
   }
+
+  const written = stamps.filter((s) => s.hasLog).length
+  const feedback = stamps.filter((s) => s.hasFeedback).length
+  const pain = stamps.filter((s) => s.hasPain).length
 
   return (
     <div className="space-y-4">
-      <StampCalendar
-        stamps={stamps}
-        onDateClick={handleDateClick}
-        selectedDate={todayYMD()}
-      />
-
-      <div className="card p-4">
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-          날짜를 클릭하면 해당 날의 훈련일지를 확인하거나 작성할 수 있어요.
-        </p>
+      {/* Header strip */}
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <span className="kicker">$ calendar.view --athlete={user?.name}</span>
+        <span className="kicker-muted">// 셀을 클릭해 해당 날의 일지를 엽니다</span>
       </div>
+
+      {/* Summary tiles */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { k: 'logged',   v: written,  tone: 'text-[var(--color-pulse-ink)]' },
+          { k: 'feedback', v: feedback, tone: 'text-[var(--color-pulse-cool)]' },
+          { k: 'pain',     v: pain,     tone: 'text-[var(--color-pulse-warn)]' },
+        ].map(({ k, v, tone }) => (
+          <div key={k} className="card p-3">
+            <span className="label !mb-0">{k}</span>
+            <div className={`mt-1 font-mono text-2xl font-semibold tabular-nums ${tone}`}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <StampCalendar stamps={stamps} onDateClick={handleDateClick} selectedDate={todayYMD()} />
     </div>
   )
 }
