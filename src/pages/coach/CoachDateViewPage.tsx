@@ -216,9 +216,9 @@ export default function CoachDateViewPage() {
 
 function Field({ code, label, children }: { code: string; label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
-      <div className="font-mono text-[10px] text-[var(--color-pulse-sub)]">
-        <span className="text-[var(--color-pulse-sub2)]">[{code}]</span> {label}
+    <div className="grid grid-cols-[120px_1fr] gap-3 items-start">
+      <div className="label !mb-0">
+        <span className="text-[var(--color-pulse-sub2)] mr-1">[{code}]</span>{label}
       </div>
       <div className="text-sm text-[var(--color-pulse-ink)] leading-relaxed min-w-0">{children}</div>
     </div>

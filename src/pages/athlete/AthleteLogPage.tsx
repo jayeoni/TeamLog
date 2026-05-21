@@ -274,14 +274,12 @@ function Row({
   code, kicker, hint, children,
 }: { code: string; kicker: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[140px_1fr] gap-5 py-3 border-t hairline first:border-t-0 first:pt-0">
+    <div className="grid grid-cols-[160px_1fr] gap-5 py-4 border-t hairline first:border-t-0 first:pt-0">
       <div>
-        <div className="font-mono text-[10px] text-[var(--color-pulse-sub)]">
-          <span className="text-[var(--color-pulse-sub2)]">[{code}]</span> {kicker}
+        <div className="label !mb-0">
+          <span className="text-[var(--color-pulse-sub2)] mr-1">[{code}]</span>{kicker}
         </div>
-        {hint && (
-          <div className="font-mono text-[9px] text-[var(--color-pulse-sub2)] mt-1 leading-relaxed">{hint}</div>
-        )}
+        {hint && <div className="hint mt-1">{hint}</div>}
       </div>
       <div className="min-w-0">{children}</div>
     </div>
