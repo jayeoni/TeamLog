@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, getDocs, doc, getDoc, addDoc, setDoc } from 'firebase/firestore'
+import {
+  collection, query, where, getDocs, doc, getDoc, addDoc, setDoc,
+} from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { generateTeamCode } from '../../utils/dateUtils'
@@ -39,7 +41,7 @@ export default function CoachTeamPage() {
         if (teamSnap.exists()) {
           setTeam({ id: teamSnap.id, ...teamSnap.data() } as Team)
         }
-        setAthletes(athleteSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AppUser[])
+        setAthletes(athleteSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as AppUser[])
       } finally {
         setLoading(false)
       }
@@ -89,112 +91,135 @@ export default function CoachTeamPage() {
     }
   }
 
-  if (loading) {
-    return <div className="card h-48 animate-pulse" />
-  }
+  if (loading) return <div className="card h-48 animate-pulse" />
 
+  // No team yet — create flow
   if (!user?.teamId || !team) {
     return (
-      <div className="space-y-4">
-        <div className="card p-8 text-center">
-          <Users size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-1">팀이 없습니다</h3>
-          <p className="text-sm text-gray-400 mb-5">팀을 만들면 선수들이 팀 코드로 참가할 수 있어요.</p>
-          {!creating ? (
-            <button onClick={() => setCreating(true)} className="btn-primary">
-              새 팀 만들기
-            </button>
-          ) : (
-            <form onSubmit={handleCreate} className="text-left space-y-3 max-w-xs mx-auto">
-              <div>
-                <label className="label">팀 이름</label>
-                <input
-                  type="text"
-                  value={newTeamName}
-                  onChange={e => setNewTeamName(e.target.value)}
-                  className="input-field"
-                  placeholder="예: 서울고 태권도부"
-                  required
-                />
-              </div>
-              {createError && <p className="text-sm text-red-500">{createError}</p>}
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setCreating(false)} className="btn-outline flex-1">취소</button>
-                <button type="submit" disabled={createLoading} className="btn-primary flex-1">
-                  {createLoading ? '생성 중...' : '팀 생성'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+      <div className="card p-10 text-center max-w-md mx-auto">
+        <Users size={32} className="mx-auto text-[var(--color-pulse-sub2)] mb-3" />
+        <h3 className="font-mono text-sm text-[var(--color-pulse-ink)] mb-1">team.not_found</h3>
+        <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mb-6">
+          // 팀을 만들면 선수들이 팀 코드로 참가할 수 있어요
+        </p>
+        {!creating ? (
+          <button onClick={() => setCreating(true)} className="btn-primary">
+            $ create_team()
+          </button>
+        ) : (
+          <form onSubmit={handleCreate} className="text-left space-y-3 max-w-xs mx-auto">
+            <div>
+              <label className="label">team.name</label>
+              <input
+                type="text"
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+                className="input-field"
+                placeholder="예: 서울고 태권도부"
+                required
+              />
+            </div>
+            {createError && (
+              <p className="font-mono text-[11px] text-[var(--color-pulse-warn)]">{createError}</p>
+            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCreating(false)} className="btn-outline flex-1">
+                cancel
+              </button>
+              <button type="submit" disabled={createLoading} className="btn-primary flex-1 justify-center">
+                {createLoading ? '...' : 'create()'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      {/* Team info */}
+      {/* Header strip */}
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <span className="kicker">$ team.manage</span>
+        <span className="kicker-muted">// 코드를 공유해 선수를 초대하세요</span>
+      </div>
+
+      {/* Team info + code (featured) */}
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{team.name}</h2>
-            <p className="text-xs text-gray-400">{team.sport}</p>
+            <span className="label !mb-0">team.info</span>
+            <h2 className="mt-1 text-lg font-bold text-[var(--color-pulse-ink)]">{team.name}</h2>
+            <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mt-0.5">
+              sport=<span className="text-[var(--color-pulse-ink)]">{team.sport}</span> · {athletes.length} athletes
+            </p>
           </div>
-          <button onClick={() => navigate('/coach')} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button onClick={() => navigate('/coach')} className="btn-ghost !p-1.5" aria-label="새로고침">
             <RefreshCw size={14} />
           </button>
         </div>
 
-        {/* Team code */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">팀 초대 코드</p>
-          <div className="flex items-center justify-between">
-            <span className="text-3xl font-bold tracking-[0.3em] text-indigo-600 dark:text-indigo-400 font-mono">
+        {/* Code */}
+        <div
+          className="card-flat p-4 relative overflow-hidden"
+          style={{
+            borderColor: 'color-mix(in oklab, var(--color-pulse-accent) 35%, transparent)',
+          }}
+        >
+          <div
+            className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, color-mix(in oklab, var(--color-pulse-accent) 18%, transparent), transparent 70%)' }}
+          />
+          <p className="label !mb-2 !text-[var(--color-pulse-accent)]">team.invite_code</p>
+          <div className="flex items-end gap-3 relative">
+            <span className="font-mono text-4xl md:text-5xl font-extrabold tracking-[0.12em] text-[var(--color-pulse-accent)] leading-none">
               {team.code}
             </span>
-            <button
-              onClick={copyCode}
-              className="flex items-center gap-1.5 btn-ghost text-sm"
-            >
-              {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-              {copied ? '복사됨' : '복사'}
+            <button onClick={copyCode} className="btn-outline ml-auto" aria-label="복사">
+              {copied ? <Check size={13} className="text-[var(--color-pulse-ok)]" /> : <Copy size={13} />}
+              {copied ? 'copied' : 'copy()'}
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">선수가 이 코드로 팀에 참가할 수 있어요.</p>
+          <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mt-3 relative">
+            // 선수가 이 코드로 팀에 참가할 수 있어요
+          </p>
         </div>
       </div>
 
       {/* Athletes */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">팀 선수 목록</h3>
-          <span className="badge-gray">{athletes.length}명</span>
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="label !mb-0">
+            athletes <span className="text-[var(--color-pulse-ink)]">{athletes.length}</span>
+          </span>
+          <span className="font-mono text-[10px] text-[var(--color-pulse-sub)]">order_by=name</span>
         </div>
 
         {athletes.length === 0 ? (
-          <div className="text-center py-6">
-            <UserCircle size={36} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-            <p className="text-sm text-gray-400">아직 참가한 선수가 없습니다.</p>
-            <p className="text-xs text-gray-400 mt-1">위 코드를 선수에게 공유하세요.</p>
+          <div className="text-center py-8">
+            <UserCircle size={28} className="mx-auto text-[var(--color-pulse-sub2)] mb-2" />
+            <p className="font-mono text-[11px] text-[var(--color-pulse-sub)]">// 아직 참가한 선수가 없습니다</p>
+            <p className="font-mono text-[10px] text-[var(--color-pulse-sub2)] mt-1">위 코드를 선수에게 공유하세요</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {athletes.map(athlete => (
+          <div>
+            <div className="grid grid-cols-[28px_1fr_auto_auto] gap-3 px-2 pb-2 border-b hairline font-mono text-[10px] text-[var(--color-pulse-sub2)]">
+              <span>av</span><span>name</span><span>specialty</span><span></span>
+            </div>
+            {athletes.map((athlete) => (
               <button
                 key={athlete.id}
                 onClick={() => navigate(`/coach/athlete/${athlete.id}`)}
-                className="w-full flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                className="w-full grid grid-cols-[28px_1fr_auto_auto] items-center gap-3 px-2 py-2.5 hover:bg-[var(--color-pulse-hover)] border-b hairline transition-colors text-left"
               >
-                <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                    {athlete.name?.charAt(0)}
-                  </span>
+                <div className="w-7 h-7 rounded-[3px] border hairline-strong bg-[var(--color-pulse-hover)] flex items-center justify-center font-mono text-xs font-semibold text-[var(--color-pulse-ink)]">
+                  {athlete.name?.charAt(0)}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{athlete.name}</p>
-                  <p className="text-xs text-gray-400">{athlete.specialty || athlete.sport}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[var(--color-pulse-ink)] truncate">{athlete.name}</p>
                 </div>
-                <span className="text-xs text-gray-300 dark:text-gray-600">→</span>
+                <p className="font-mono text-[10px] text-[var(--color-pulse-sub)]">{athlete.specialty || athlete.sport}</p>
+                <span className="font-mono text-[11px] text-[var(--color-pulse-sub)]">→</span>
               </button>
             ))}
           </div>
