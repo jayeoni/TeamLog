@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../../firebase'
 import { useAuthStore } from '../../store/authStore'
 import { useThemeStore } from '../../store/themeStore'
-import { Dumbbell, Sun, Moon, Eye, EyeOff } from 'lucide-react'
+import { Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import type { AppUser } from '../../types'
 
 export default function LoginPage() {
@@ -44,81 +44,129 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
-      <button
-        onClick={toggle}
-        className="absolute top-4 right-4 btn-ghost p-2"
-        aria-label="테마 전환"
-      >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
+    <AuthFrame title="login">
+      <div className="flex items-baseline justify-between absolute top-4 left-5 right-5">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-[2px] bg-[var(--color-pulse-accent)]"
+            style={{ boxShadow: '0 0 8px var(--color-pulse-accent)' }}
+          />
+          <span className="font-mono text-[13px] font-semibold text-[var(--color-pulse-ink)]">teamlog</span>
+          <span className="font-mono text-[10px] text-[var(--color-pulse-sub)] ml-1">v2.6</span>
+        </div>
+        <button onClick={toggle} className="btn-outline !py-1 !px-2 !text-[10px]" aria-label="테마 전환">
+          {isDark ? <><Moon size={11} /> dark</> : <><Sun size={11} /> light</>}
+        </button>
+      </div>
 
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-            <Dumbbell size={28} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">TeamLog</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">선수·코치 훈련일지 플랫폼</p>
+      <div className="w-full max-w-[420px]">
+        {/* Heading */}
+        <div className="mb-6">
+          <div className="kicker">$ auth.login</div>
+          <h1 className="font-mono text-3xl font-bold tracking-tight text-[var(--color-pulse-ink)] mt-2">
+            로그인<span className="caret" />
+          </h1>
+          <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mt-2">
+            // 선수·코치 훈련일지 시스템에 접근하세요
+          </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleLogin} className="card p-6 space-y-4">
           <div>
-            <label className="label">이메일</label>
+            <label className="label">
+              <span className="text-[var(--color-pulse-sub2)] mr-1">[00]</span>email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="input-field"
-              placeholder="example@email.com"
+              className="input-field input-mono"
+              placeholder="example@team.kr"
               required
               autoComplete="email"
             />
           </div>
 
           <div>
-            <label className="label">비밀번호</label>
+            <label className="label flex items-center justify-between">
+              <span>
+                <span className="text-[var(--color-pulse-sub2)] mr-1">[01]</span>password
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="font-mono text-[11px] text-[var(--color-pulse-cool)] hover:underline"
+              >
+                {showPw ? 'hide' : 'show'}
+              </button>
+            </label>
             <div className="relative">
               <input
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input-field pr-10"
+                className="input-field input-mono pr-10"
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
               />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-pulse-sub2)] pointer-events-none">
+                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+              </span>
             </div>
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 dark:text-red-400 text-center">{error}</p>
+            <p className="font-mono text-[11px] text-[var(--color-pulse-warn)] text-center">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full mt-2"
-          >
-            {loading ? '로그인 중...' : '로그인'}
+          <button type="submit" disabled={loading} className="btn-primary w-full justify-center mt-2">
+            {loading ? 'authenticating...' : '$ authenticate()'}
+            <span className="ml-auto text-[var(--color-pulse-accent-ink)] opacity-50">↵</span>
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-          아직 계정이 없으신가요?{' '}
-          <Link to="/signup" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
-            회원가입
+        {/* Footer link */}
+        <div className="flex items-center justify-between mt-5 font-mono text-[11px] text-[var(--color-pulse-sub)]">
+          <span>아직 계정이 없으신가요?</span>
+          <Link to="/signup" className="text-[var(--color-pulse-accent)] hover:underline">
+            signup →
           </Link>
-        </p>
+        </div>
+      </div>
+    </AuthFrame>
+  )
+}
+
+/* Reusable shell — also used by SignupPage */
+export function AuthFrame({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-[var(--color-pulse-bg)] text-[var(--color-pulse-ink)] relative overflow-hidden">
+      {/* ASCII grid */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(var(--color-pulse-line) 1px, transparent 1px), linear-gradient(90deg, var(--color-pulse-line) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      />
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 h-11 border-b hairline bg-[var(--color-pulse-bg)]">
+        <div className="h-full flex items-center px-5 font-mono text-[11px] text-[var(--color-pulse-sub)]">
+          <span className="ml-auto">~ / <span className="text-[var(--color-pulse-ink)]">{title}</span></span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="relative w-full flex items-center justify-center">{children}</div>
+
+      {/* Footer */}
+      <div className="absolute bottom-4 left-5 right-5 flex justify-between font-mono text-[10px] text-[var(--color-pulse-sub2)] pointer-events-none">
+        <span>© teamlog · sports training journal</span>
+        <span>↑↓ navigate · enter submit · esc cancel</span>
       </div>
     </div>
   )
