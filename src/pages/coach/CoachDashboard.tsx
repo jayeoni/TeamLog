@@ -6,7 +6,7 @@ import { useAuthStore } from '../../store/authStore'
 import { toYMD, todayYMD, formatKoreanDate, weekStartYMD, parseYMD } from '../../utils/dateUtils'
 import ConditionStars from '../../components/shared/ConditionStars'
 import PainBadge from '../../components/shared/PainBadge'
-import { Users, AlertTriangle, CalendarDays, ChevronRight, ClipboardList, TrendingUp } from 'lucide-react'
+import { Users, ChevronRight } from 'lucide-react'
 import type { AppUser, DailyLog } from '../../types'
 
 export default function CoachDashboard() {
@@ -20,7 +20,10 @@ export default function CoachDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user?.teamId) { setLoading(false); return }
+    if (!user?.teamId) {
+      setLoading(false)
+      return
+    }
 
     const fetchData = async () => {
       try {
@@ -43,9 +46,9 @@ export default function CoachDashboard() {
           )),
         ])
 
-        setAthletes(athleteSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AppUser[])
-        setTodayLogs(logSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
-        setRecentLogs(weekSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DailyLog[])
+        setAthletes(athleteSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as AppUser[])
+        setTodayLogs(logSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as DailyLog[])
+        setRecentLogs(weekSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as DailyLog[])
       } finally {
         setLoading(false)
       }
@@ -54,40 +57,46 @@ export default function CoachDashboard() {
     fetchData()
   }, [user, today])
 
-  const logMap = Object.fromEntries(todayLogs.map(l => [l.athleteId, l]))
+  const logMap = Object.fromEntries(todayLogs.map((l) => [l.athleteId, l]))
   const writtenCount = todayLogs.length
   const missingCount = athletes.length - writtenCount
-  const painCount = todayLogs.filter(l => l.painArea?.trim()).length
-  const pendingFeedback = todayLogs.filter(l => !l.coachFeedback).length
+  const painCount = todayLogs.filter((l) => l.painArea?.trim()).length
+  const pendingFeedback = todayLogs.filter((l) => !l.coachFeedback).length
   const weekStart = weekStartYMD()
-  const weekLogs = recentLogs.filter(l => l.date >= weekStart)
+  const weekLogs = recentLogs.filter((l) => l.date >= weekStart)
   const weekTotal = athletes.length * 7
   const weekPct = weekTotal > 0 ? Math.round((weekLogs.length / weekTotal) * 100) : 0
 
   const lastLogMap: Record<string, string> = {}
-  recentLogs.forEach(l => {
+  recentLogs.forEach((l) => {
     if (!lastLogMap[l.athleteId] || l.date > lastLogMap[l.athleteId]) {
       lastLogMap[l.athleteId] = l.date
     }
   })
   const yesterday = toYMD(new Date(Date.now() - 86400000))
-  const missingAthletes = athletes.filter(a => {
+  const missingAthletes = athletes.filter((a) => {
     const last = lastLogMap[a.id]
     return !last || last < yesterday
   })
 
   if (loading) {
-    return <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="card h-24 animate-pulse" />)}</div>
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => <div key={i} className="card h-24 animate-pulse" />)}
+      </div>
+    )
   }
 
   if (!user?.teamId) {
     return (
-      <div className="card p-8 text-center">
-        <Users size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-        <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-1">팀이 없습니다</h3>
-        <p className="text-sm text-gray-400 mb-4">팀을 만들어 선수를 초대하세요.</p>
+      <div className="card p-10 text-center">
+        <Users size={32} className="mx-auto text-[var(--color-pulse-sub2)] mb-3" />
+        <h3 className="font-mono text-sm text-[var(--color-pulse-ink)] mb-1">team.not_found</h3>
+        <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mb-5">
+          // 팀을 만들어 선수를 초대하세요
+        </p>
         <button onClick={() => navigate('/coach/team')} className="btn-primary">
-          팀 만들기
+          $ create_team()
         </button>
       </div>
     )
@@ -95,40 +104,30 @@ export default function CoachDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Greeting */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          안녕하세요, {user?.name} 코치님
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatKoreanDate(today)}</p>
+      {/* Greeting strip */}
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <span className="kicker">$ team.snapshot --date={today}</span>
+        <span className="kicker-muted">// {formatKoreanDate(today)} · {user?.name} 코치</span>
+        <span className="ml-auto kicker-muted">auto-refresh 30s</span>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { label: '전체 선수', value: athletes.length, icon: Users, color: 'text-indigo-500' },
-          { label: '오늘 작성', value: writtenCount, icon: ClipboardList, color: 'text-emerald-500' },
-          { label: '미작성', value: missingCount, icon: CalendarDays, color: 'text-gray-400' },
-          { label: '통증', value: painCount, icon: AlertTriangle, color: 'text-orange-500' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="card p-3 text-center">
-            <Icon size={18} className={`mx-auto mb-1 ${color}`} />
-            <div className="text-xl font-bold text-gray-900 dark:text-white">{value}</div>
-            <div className="text-xs text-gray-400 leading-tight mt-0.5">{label}</div>
-          </div>
-        ))}
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Kpi label="team.size"     value={athletes.length}    unit="ppl" sub="active roster" />
+        <Kpi label="logged.today"  value={writtenCount}       unit={`/${athletes.length}`} tone="ok"   sub={athletes.length ? `${Math.round((writtenCount/athletes.length)*100)}% submitted` : ''} />
+        <Kpi label="missing.today" value={missingCount}       unit="ppl" tone="warn" sub="needs follow-up" />
+        <Kpi label="pain.today"    value={painCount}          unit="ppl" tone="warn" sub="pain reported" />
       </div>
 
-      {/* Missing-log alert */}
+      {/* Missing alert */}
       {missingAthletes.length > 0 && (
-        <div className="card p-4 border border-orange-200 dark:border-orange-800/50">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={15} className="text-orange-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">미작성 알림</h3>
-            <span className="ml-auto text-xs text-orange-500 font-semibold">{missingAthletes.length}명</span>
+        <div className="card p-4" style={{ borderColor: 'color-mix(in oklab, var(--color-pulse-warn) 30%, transparent)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="label !mb-0 !text-[var(--color-pulse-warn)]">missing.alert <span className="text-[var(--color-pulse-sub)]">// 어제 이후 미작성</span></span>
+            <span className="font-mono text-[11px] text-[var(--color-pulse-warn)]">{missingAthletes.length} ppl</span>
           </div>
-          <div className="space-y-1">
-            {missingAthletes.map(a => {
+          <div>
+            {missingAthletes.map((a) => {
               const last = lastLogMap[a.id]
               const daysAgo = last
                 ? Math.round((parseYMD(today).getTime() - parseYMD(last).getTime()) / 86400000)
@@ -137,16 +136,13 @@ export default function CoachDashboard() {
                 <button
                   key={a.id}
                   onClick={() => navigate(`/coach/athlete/${a.id}`)}
-                  className="w-full flex items-center justify-between py-2 px-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                  className="w-full flex items-center gap-3 py-2 border-t hairline hover:bg-[var(--color-pulse-hover)] transition-colors text-left first:border-t-0"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{a.name?.charAt(0) ?? '?'}</span>
-                    </div>
-                    <span className="text-sm text-gray-900 dark:text-white">{a.name}</span>
-                  </div>
-                  <span className="text-xs text-orange-500 font-semibold">
-                    {daysAgo !== null ? `${daysAgo}일 미작성` : '기록 없음'}
+                  <Avatar initial={a.name?.charAt(0) ?? '?'} />
+                  <span className="text-sm text-[var(--color-pulse-ink)]">{a.name}</span>
+                  <span className="font-mono text-[10px] text-[var(--color-pulse-sub)]">{a.specialty || a.sport}</span>
+                  <span className="ml-auto font-mono text-[11px] text-[var(--color-pulse-warn)]">
+                    {daysAgo !== null ? `${daysAgo}d ago` : 'no record'}
                   </span>
                 </button>
               )
@@ -155,93 +151,117 @@ export default function CoachDashboard() {
         </div>
       )}
 
-      {/* Team record rate */}
+      {/* Week record rate */}
       {athletes.length > 0 && (
-        <div className="card p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={15} className="text-indigo-500" />
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">팀 주간 기록률</h3>
-            <span className="ml-auto text-xs text-gray-400">이번 주 {weekLogs.length}/{weekTotal}건</span>
+        <div className="card p-4">
+          <div className="flex items-baseline justify-between mb-3">
+            <span className="label !mb-0">team.week.rate</span>
+            <span className="font-mono text-[11px] text-[var(--color-pulse-ink)]">
+              {weekLogs.length}/{weekTotal} <span className="text-[var(--color-pulse-sub)]">logs</span>
+            </span>
           </div>
-          <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${weekPct}%` }} />
+          <div className="h-2 bg-[var(--color-pulse-hover)] border hairline rounded-[2px] overflow-hidden">
+            <div className="h-full bg-[var(--color-pulse-accent)]" style={{ width: `${Math.min(weekPct, 100)}%` }} />
           </div>
-          <p className="text-right text-xs font-semibold text-indigo-600 dark:text-indigo-400">{weekPct}%</p>
+          <p className="font-mono text-[11px] text-right mt-1 text-[var(--color-pulse-accent)]">{weekPct}%</p>
         </div>
       )}
 
-      {/* Quick date navigation */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-white">날짜별 조회</h3>
-          <button
-            onClick={() => navigate(`/coach/date/${today}`)}
-            className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 font-medium"
-          >
-            오늘 상세 <ChevronRight size={14} />
-          </button>
+      {/* Quick date nav */}
+      <button
+        onClick={() => navigate(`/coach/date/${today}`)}
+        className="w-full card p-4 flex items-center text-left hover:bg-[var(--color-pulse-hover)] transition-colors"
+      >
+        <div>
+          <span className="label !mb-0">date.view</span>
+          <p className="font-mono text-[11px] text-[var(--color-pulse-sub)] mt-1">
+            // 특정 날짜의 팀 전체 일지를 확인합니다
+          </p>
         </div>
-        <p className="text-xs text-gray-400 mt-1">특정 날짜의 팀 전체 일지를 확인합니다.</p>
-      </div>
+        <span className="ml-auto flex items-center gap-1 font-mono text-[12px] text-[var(--color-pulse-accent)]">
+          today <ChevronRight size={13} />
+        </span>
+      </button>
 
-      {/* Today's athlete list */}
-      <div className="card p-5">
+      {/* Today's roster */}
+      <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-900 dark:text-white">오늘 기록 현황</h3>
-          {pendingFeedback > 0 && (
-            <span className="badge-orange">{pendingFeedback}명 피드백 대기</span>
-          )}
+          <span className="label !mb-0">
+            roster.today <span className="text-[var(--color-pulse-ink)]">{athletes.length}</span>
+          </span>
+          {pendingFeedback > 0 && <span className="badge-blue">{pendingFeedback}명 피드백 대기</span>}
         </div>
 
         {athletes.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-sm text-gray-400">팀에 선수가 없습니다.</p>
-            <button onClick={() => navigate('/coach/team')} className="mt-3 text-sm text-indigo-500 font-medium">
-              팀 코드 확인하기
+            <p className="font-mono text-[11px] text-[var(--color-pulse-sub)]">// 팀에 선수가 없습니다</p>
+            <button onClick={() => navigate('/coach/team')} className="mt-3 btn-ghost !text-[11px] text-[var(--color-pulse-accent)]">
+              view_team_code() →
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {athletes.map(athlete => {
+          <div>
+            <div className="grid grid-cols-[28px_1fr_auto_auto_auto] gap-3 px-2 pb-2 border-b hairline font-mono text-[10px] text-[var(--color-pulse-sub2)]">
+              <span>av</span><span>name</span><span>cond</span><span>pain</span><span>status</span>
+            </div>
+            {athletes.map((athlete) => {
               const log = logMap[athlete.id]
               return (
                 <button
                   key={athlete.id}
                   onClick={() => navigate(`/coach/athlete/${athlete.id}`)}
-                  className="w-full flex items-center justify-between py-3 px-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                  className="w-full grid grid-cols-[28px_1fr_auto_auto_auto] items-center gap-3 py-2.5 px-2 border-b hairline hover:bg-[var(--color-pulse-hover)] transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                        {athlete.name?.charAt(0) ?? '?'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{athlete.name}</p>
-                      <p className="text-xs text-gray-400">{athlete.specialty || athlete.sport}</p>
-                    </div>
+                  <Avatar initial={athlete.name?.charAt(0) ?? '?'} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-pulse-ink)] truncate">{athlete.name}</p>
+                    <p className="font-mono text-[10px] text-[var(--color-pulse-sub)] truncate">{athlete.specialty || athlete.sport}</p>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    {log ? (
-                      <>
-                        <ConditionStars value={log.condition} size="sm" />
-                        {log.painArea?.trim() && <PainBadge painArea={log.painArea} />}
-                        {!log.coachFeedback && (
-                          <span className="badge-blue text-xs">피드백 필요</span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="badge-gray">미작성</span>
-                    )}
-                    <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                  </div>
+                  {log ? <ConditionStars value={log.condition} size="sm" /> : <span className="font-mono text-[10px] text-[var(--color-pulse-sub2)]">—</span>}
+                  <span className="min-w-[20px] text-right">
+                    {log?.painArea?.trim()
+                      ? <PainBadge painArea={log.painArea} />
+                      : <span className="font-mono text-[10px] text-[var(--color-pulse-sub2)]">—</span>}
+                  </span>
+                  <span className="min-w-[100px] text-right">
+                    {!log ? <span className="badge-gray">미작성</span>
+                      : !log.coachFeedback ? <span className="badge-blue">피드백 필요</span>
+                      : <span className="badge-green">완료</span>}
+                  </span>
                 </button>
               )
             })}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─────── helpers ───────
+
+function Kpi({
+  label, value, unit, tone, sub,
+}: { label: string; value: number; unit?: string; tone?: 'ok' | 'warn'; sub?: string }) {
+  const c = tone === 'ok' ? 'text-[var(--color-pulse-ok)]'
+          : tone === 'warn' ? 'text-[var(--color-pulse-warn)]'
+          : 'text-[var(--color-pulse-ink)]'
+  return (
+    <div className="card p-3">
+      <span className="label !mb-0">{label}</span>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className={`font-mono text-2xl font-semibold tabular-nums tracking-tight ${c}`}>{value}</span>
+        {unit && <span className="font-mono text-[11px] text-[var(--color-pulse-sub)]">{unit}</span>}
+      </div>
+      {sub && <p className="font-mono text-[10px] text-[var(--color-pulse-sub)] mt-1">{sub}</p>}
+    </div>
+  )
+}
+
+function Avatar({ initial }: { initial: string }) {
+  return (
+    <div className="w-7 h-7 rounded-[3px] border hairline-strong bg-[var(--color-pulse-hover)] flex items-center justify-center font-mono text-xs font-semibold text-[var(--color-pulse-ink)] flex-shrink-0">
+      {initial}
     </div>
   )
 }
