@@ -70,7 +70,7 @@ export default function ConditionChart({ logs }: Props) {
   )
 
   // Stats
-  const condVals = data.map((d) => d.condition).filter((v): v is number => v != null)
+  const condVals = data.map((d) => d.condition).filter((v): v is any => v != null)
   const condMean = condVals.length ? (condVals.reduce((a, b) => a + b, 0) / condVals.length).toFixed(1) : '—'
 
   return (
@@ -99,7 +99,7 @@ export default function ConditionChart({ logs }: Props) {
             <Tooltip
               contentStyle={tooltipStyle}
               labelStyle={labelStyle}
-              formatter={(v: number) => [`${v}.0 / 5`, 'condition']}
+              formatter={(v: any) => [`${v}.0 / 5`, 'condition']}
               cursor={{ stroke: ACCENT, strokeOpacity: 0.4, strokeDasharray: '2 2' }}
             />
             <Area
@@ -128,7 +128,7 @@ export default function ConditionChart({ logs }: Props) {
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelStyle={labelStyle}
-                formatter={(v: number) => [`${v}h`, 'sleep']}
+                formatter={(v: any) => [`${v}h`, 'sleep']}
                 cursor={{ fill: ACCENT2, fillOpacity: 0.08 }}
               />
               <Bar dataKey="sleep" fill={ACCENT2} radius={[1, 1, 0, 0]} maxBarSize={14} />
@@ -149,7 +149,7 @@ export default function ConditionChart({ logs }: Props) {
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelStyle={labelStyle}
-                formatter={(v: number) => [`${v}min`, 'duration']}
+                formatter={(v: any) => [`${v}min`, 'duration']}
                 cursor={{ fill: COOL, fillOpacity: 0.08 }}
               />
               <Bar dataKey="duration" fill={COOL} radius={[1, 1, 0, 0]} maxBarSize={14} />
