@@ -12,16 +12,13 @@ interface Props {
   logs: DailyLog[] // desc order (newest first)
 }
 
-const ACCENT  = '#C7F23A' // condition
-const ACCENT2 = '#5BE0B6' // sleep
-const COOL    = '#5BA8FF' // duration
-
-/**
- * PULSE condition / sleep / duration trend. Same recharts stack as before,
- * just re-skinned: chartreuse fill, mono tick labels, terminal-style tooltip.
- */
+// PULSE condition / sleep / duration trend. Same recharts stack as before
 export default function ConditionChart({ logs }: Props) {
   const { isDark } = useThemeStore()
+
+  const ACCENT = isDark ? '#C7F23A' : '#84CC16' // condition (Dark: Neon Yellow/Green, Light: Lime Green)
+  const ACCENT2 = isDark ? '#5BE0B6' : '#10B981' // sleep (Dark: Mint, Light: Emerald)
+  const COOL = isDark ? '#5BA8FF' : '#3B82F6' // duration (Dark: Light Blue, Light: Blue)
 
   if (logs.length < 3) return null
 
@@ -41,19 +38,20 @@ export default function ConditionChart({ logs }: Props) {
   const hasSleep = data.some((d) => d.sleep !== null)
   const hasDuration = data.some((d) => d.duration !== null)
 
-  const sub  = isDark ? '#7B8194' : '#6E7382'
-  const sub2 = isDark ? '#4F5564' : '#A0A4B0'
-  const grid = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(10,11,15,0.06)'
+  const sub = isDark ? '#7B8194' : '#6E7382'
+  const sub2 = isDark ? '#A0A4B0' : '#4F5564'
+  const grid = isDark ? 'rgba(250, 247, 247, 0.09)' : 'rgba(10,11,15,0.07)'
   const panel = isDark ? '#11131A' : '#FFFFFF'
-  const line2 = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,11,15,0.14)'
+  const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(10,11,15,0.14)'
 
   const tooltipStyle = {
     backgroundColor: panel,
-    border: `1px solid ${line2}`,
+    border: `1px solid ${border}`,
     borderRadius: 4,
     fontSize: 11,
     fontFamily: '"JetBrains Mono", monospace',
-    padding: '6px 8px',
+    padding: '4px 8px',
+    
   }
   const labelStyle = { color: sub, fontSize: 10 }
   const tickProps = { fill: sub2, fontSize: 9, fontFamily: '"JetBrains Mono", monospace' }
@@ -89,7 +87,7 @@ export default function ConditionChart({ logs }: Props) {
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
             <defs>
               <linearGradient id="pulseCondGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.35} />
+                <stop offset="5%" stopColor={ACCENT} stopOpacity={0.35} />
                 <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -99,6 +97,7 @@ export default function ConditionChart({ logs }: Props) {
             <Tooltip
               contentStyle={tooltipStyle}
               labelStyle={labelStyle}
+              itemStyle={{ color: ACCENT, fontWeight: 600 }} 
               formatter={(v: any) => [`${v}.0 / 5`, 'condition']}
               cursor={{ stroke: ACCENT, strokeOpacity: 0.4, strokeDasharray: '2 2' }}
             />
