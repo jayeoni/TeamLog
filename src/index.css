@@ -64,9 +64,10 @@
     --color-pulse-bg:     #0A0B0F;
     --color-pulse-panel:  #11131A;
     --color-pulse-panel2: #0F1117;
-    --color-pulse-ink:    #E6E8EC;
-    --color-pulse-sub:    #7B8194;
+    --color-pulse-ink:    #F3F4F6;
+    --color-pulse-sub:    #A0A4B0;
     --color-pulse-sub2:   #4F5564;
+    --color-pulse-accent: #C7F23A;
     --color-pulse-line:   rgba(255, 255, 255, 0.07);
     --color-pulse-line2:  rgba(255, 255, 255, 0.14);
     --color-pulse-hover:  rgba(255, 255, 255, 0.05);
@@ -202,9 +203,14 @@
   }
   .input-field:focus {
     border-color: var(--color-pulse-accent);
-    box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-pulse-accent) 25%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in oklab, #84CC16 25%, transparent);
   }
+   .dark .input-field:focus {
+   border-color: color-mix(in oklab, var(--color-pulse-accent) 60%, transparent);
+   box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--color-pulse-accent) 15%, transparent);
+ }
 
+  
   /* Mono-flavored input (codes, jersey numbers, team codes) */
   .input-mono {
     font-family: var(--font-mono);
