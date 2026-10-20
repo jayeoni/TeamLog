@@ -1,22 +1,25 @@
-import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import { auth, db } from './firebase'
-import { useAuthStore } from './store/authStore'
-import { useThemeStore } from './store/themeStore'
-import type { AppUser } from './types'
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
+import { useAuthStore } from "./store/authStore";
+import { useThemeStore } from "./store/themeStore";
+import type { AppUser } from "./types";
 
-import Layout from './components/layout/Layout'
-import LoginPage from './pages/auth/LoginPage'
-import SignupPage from './pages/auth/SignupPage'
-import AthleteDashboard from './pages/athlete/AthleteDashboard'
-import AthleteCalendarPage from './pages/athlete/AthleteCalendarPage'
-import AthleteLogPage from './pages/athlete/AthleteLogPage'
-import CoachDashboard from './pages/coach/CoachDashboard'
-import CoachDateViewPage from './pages/coach/CoachDateViewPage'
-import CoachAthleteViewPage from './pages/coach/CoachAthleteViewPage'
-import CoachTeamPage from './pages/coach/CoachTeamPage'
+import Layout from "./components/layout/Layout";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import AthleteDashboard from "./pages/athlete/AthleteDashboard";
+import AthleteCalendarPage from "./pages/athlete/AthleteCalendarPage";
+import AthleteLogPage from "./pages/athlete/AthleteLogPage";
+import CoachDashboard from "./pages/coach/CoachDashboard";
+import CoachDateViewPage from "./pages/coach/CoachDateViewPage";
+import CoachAthleteViewPage from "./pages/coach/CoachAthleteViewPage";
+import CoachTeamPage from "./pages/coach/CoachTeamPage";
+
+import BillingPage from "./pages/coach/BillingPage";
+import BillingSuccessPage from "./pages/coach/BillingSuccessPage";
 
 function LoadingScreen() {
   return (
@@ -26,47 +29,55 @@ function LoadingScreen() {
         <p className="text-sm text-gray-400">로딩 중...</p>
       </div>
     </div>
-  )
+  );
 }
 
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 'athlete' | 'coach' }) {
-  const { user, loading } = useAuthStore()
-  if (loading) return <LoadingScreen />
-  if (!user) return <Navigate to="/login" replace />
+function ProtectedRoute({
+  children,
+  role,
+}: {
+  children: React.ReactNode;
+  role?: "athlete" | "coach";
+}) {
+  const { user, loading } = useAuthStore();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
   if (role && user.role !== role) {
-    return <Navigate to={user.role === 'coach' ? '/coach' : '/athlete'} replace />
+    return (
+      <Navigate to={user.role === "coach" ? "/coach" : "/athlete"} replace />
+    );
   }
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 export default function App() {
-  const { setUser, setLoading } = useAuthStore()
-  const { apply } = useThemeStore()
+  const { setUser, setLoading } = useAuthStore();
+  const { apply } = useThemeStore();
 
   useEffect(() => {
-    apply()
-  }, [apply])
+    apply();
+  }, [apply]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const snap = await getDoc(doc(db, 'users', firebaseUser.uid))
+          const snap = await getDoc(doc(db, "users", firebaseUser.uid));
           if (snap.exists()) {
-            setUser({ id: firebaseUser.uid, ...snap.data() } as AppUser)
+            setUser({ id: firebaseUser.uid, ...snap.data() } as AppUser);
           } else {
-            setUser(null)
+            setUser(null);
           }
         } catch {
-          setUser(null)
+          setUser(null);
         }
       } else {
-        setUser(null)
+        setUser(null);
       }
-      setLoading(false)
-    })
-    return unsub
-  }, [setUser, setLoading])
+      setLoading(false);
+    });
+    return unsub;
+  }, [setUser, setLoading]);
 
   return (
     <BrowserRouter>
@@ -99,11 +110,16 @@ export default function App() {
           <Route path="date/:date" element={<CoachDateViewPage />} />
           <Route path="athlete/:athleteId" element={<CoachAthleteViewPage />} />
           <Route path="team" element={<CoachTeamPage />} />
+          <Route path="/coach/billing" element={<BillingPage />} />
+          <Route
+            path="/coach/billing/success"
+            element={<BillingSuccessPage />}
+          />
         </Route>
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
