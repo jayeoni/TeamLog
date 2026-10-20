@@ -15,7 +15,6 @@ export default function CoachDashboard() {
   const today = todayYMD()
 
   const [athletes, setAthletes] = useState<AppUser[]>([])
-  const [todayLogs, setTodayLogs] = useState<DailyLog[]>([])
   const [recentLogs, setRecentLogs] = useState<DailyLog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -27,16 +26,11 @@ export default function CoachDashboard() {
 
     const fetchData = async () => {
       try {
-        const [athleteSnap, logSnap, weekSnap] = await Promise.all([
+        const [athleteSnap, weekSnap] = await Promise.all([
           getDocs(query(
             collection(db, 'users'),
             where('teamId', '==', user.teamId),
             where('role', '==', 'athlete')
-          )),
-          getDocs(query(
-            collection(db, 'dailyLogs'),
-            where('teamId', '==', user.teamId),
-            where('date', '==', today)
           )),
           getDocs(query(
             collection(db, 'dailyLogs'),
@@ -47,7 +41,6 @@ export default function CoachDashboard() {
         ])
 
         setAthletes(athleteSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as AppUser[])
-        setTodayLogs(logSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as DailyLog[])
         setRecentLogs(weekSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as DailyLog[])
       } finally {
         setLoading(false)
@@ -56,7 +49,7 @@ export default function CoachDashboard() {
 
     fetchData()
   }, [user, today])
-
+  const todayLogs = recentLogs.filter((l) => l.date === today)
   const logMap = Object.fromEntries(todayLogs.map((l) => [l.athleteId, l]))
   const writtenCount = todayLogs.length
   const missingCount = athletes.length - writtenCount
@@ -113,10 +106,10 @@ export default function CoachDashboard() {
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="team.size"     value={athletes.length}    unit="ppl" sub="active roster" />
-        <Kpi label="logged.today"  value={writtenCount}       unit={`/${athletes.length}`} tone="ok"   sub={athletes.length ? `${Math.round((writtenCount/athletes.length)*100)}% submitted` : ''} />
-        <Kpi label="missing.today" value={missingCount}       unit="ppl" tone="warn" sub="needs follow-up" />
-        <Kpi label="pain.today"    value={painCount}          unit="ppl" tone="warn" sub="pain reported" />
+        <Kpi label="team.size" value={athletes.length} unit="ppl" sub="active roster" />
+        <Kpi label="logged.today" value={writtenCount} unit={`/${athletes.length}`} tone="ok" sub={athletes.length ? `${Math.round((writtenCount / athletes.length) * 100)}% submitted` : ''} />
+        <Kpi label="missing.today" value={missingCount} unit="ppl" tone="warn" sub="needs follow-up" />
+        <Kpi label="pain.today" value={painCount} unit="ppl" tone="warn" sub="pain reported" />
       </div>
 
       {/* Missing alert */}
@@ -206,6 +199,7 @@ export default function CoachDashboard() {
             </div>
             {athletes.map((athlete) => {
               const log = logMap[athlete.id]
+              const unreadCount = (athlete as any).unread
               return (
                 <button
                   key={athlete.id}
@@ -213,10 +207,28 @@ export default function CoachDashboard() {
                   className="w-full grid grid-cols-[28px_1fr_auto_auto_auto] items-center gap-3 py-2.5 px-2 border-b hairline hover:bg-[var(--color-pulse-hover)] transition-colors text-left"
                 >
                   <Avatar initial={athlete.name?.charAt(0) ?? '?'} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-pulse-ink)] truncate">{athlete.name}</p>
-                    <p className="font-mono text-[10px] text-[var(--color-pulse-sub)] truncate">{athlete.specialty || athlete.sport}</p>
+                  // 이름 및 안읽은 메시지 뱃지를 묶어서 출력
+                  <div className="min-w-0 flex items-center gap-2">
+                    <div className="truncate">
+                      <p className="text-sm font-medium text-[var(--color-pulse-ink)] truncate">{athlete.name}</p>
+                      <p className="font-mono text-[10px] text-[var(--color-pulse-sub)] truncate">{athlete.specialty || athlete.sport}</p>
+                    </div>
+                    
+                    // 안 읽은 메시지 있을 경우 뱃지 노출
+                    {unreadCount && (
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation(); // 버튼(행) 전체 클릭 이벤트 겹침 방지
+                          // URL에 focus=message 파라미터를 추가하여 뷰 페이지에서 스크롤 유도 가능
+                          navigate(`/coach/athlete/${athlete.id}?focus=message`);
+                        }}
+                        className="inline-flex flex-shrink-0 items-center justify-center px-1.5 py-0.5 rounded-[4px] bg-blue-500 text-white font-mono text-[10px] font-bold shadow-sm cursor-pointer hover:bg-blue-600 transition-colors"
+                      >
+                        {unreadCount === true ? '1 msg' : `${unreadCount} msg`}
+                      </span>
+                    )}
                   </div>
+
                   {log ? <ConditionStars value={log.condition} size="sm" /> : <span className="font-mono text-[10px] text-[var(--color-pulse-sub2)]">—</span>}
                   <span className="min-w-[20px] text-right">
                     {log?.painArea?.trim()
@@ -226,7 +238,7 @@ export default function CoachDashboard() {
                   <span className="min-w-[100px] text-right">
                     {!log ? <span className="badge-gray">미작성</span>
                       : !log.coachFeedback ? <span className="badge-blue">피드백 필요</span>
-                      : <span className="badge-green">완료</span>}
+                        : <span className="badge-green">완료</span>}
                   </span>
                 </button>
               )
@@ -244,8 +256,8 @@ function Kpi({
   label, value, unit, tone, sub,
 }: { label: string; value: number; unit?: string; tone?: 'ok' | 'warn'; sub?: string }) {
   const c = tone === 'ok' ? 'text-[var(--color-pulse-ok)]'
-          : tone === 'warn' ? 'text-[var(--color-pulse-warn)]'
-          : 'text-[var(--color-pulse-ink)]'
+    : tone === 'warn' ? 'text-[var(--color-pulse-warn)]'
+      : 'text-[var(--color-pulse-ink)]'
   return (
     <div className="card p-3">
       <span className="label !mb-0">{label}</span>

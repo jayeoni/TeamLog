@@ -136,7 +136,9 @@ export default function AthleteDashboard() {
   const totalDays = daysInCurrentMonth();
   const weekPct = Math.round((weekCount / 7) * 100);
   const monthPct = Math.round((monthCount / daysElapsed) * 100);
-  const feedbackLogs = recentLogs.filter((l) => l.coachFeedback);
+  const feedbackLogs = recentLogs.filter(
+    (l) => l.coachFeedback && !l.isFeedbackRead,
+  );
   const feedbackCount = feedbackLogs.length;
   const latestFeedbackLog = feedbackLogs.length > 0 ? feedbackLogs[0] : null;
 

@@ -9,6 +9,7 @@ export interface AppUser {
   sport: string
   specialty: string
   createdAt: string
+  unread?: boolean | number
 }
 
 export interface Team {
@@ -37,6 +38,7 @@ export interface DailyLog {
   selfReview: string
   coachFeedback: string | null
   coachFeedbackAt: string | null
+  isFeedbackRead: boolean;
   coachId: string | null
   status: 'draft' | 'submitted'
   createdAt: string

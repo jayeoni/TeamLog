@@ -1,119 +1,133 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore'
-import { db } from '../../firebase'
-import { useAuthStore } from '../../store/authStore'
-import { formatKoreanDate, todayYMD } from '../../utils/dateUtils'
-import ConditionStars from '../../components/shared/ConditionStars'
-import { Save, ChevronLeft, Share2 } from 'lucide-react'
-import { shareLogToKakao } from '../../utils/kakaoShare'
-import type { DailyLog } from '../../types'
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { db } from "../../firebase";
+import { useAuthStore } from "../../store/authStore";
+import { formatKoreanDate, todayYMD } from "../../utils/dateUtils";
+import ConditionStars from "../../components/shared/ConditionStars";
+import { Save, ChevronLeft, Share2 } from "lucide-react";
+import { shareLogToKakao } from "../../utils/kakaoShare";
+import type { DailyLog } from "../../types";
 
 export default function AthleteLogPage() {
-  const { date } = useParams<{ date: string }>()
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
+  const { date } = useParams<{ date: string }>();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
 
-  const ymd = date ?? todayYMD()
-  const isFuture = ymd > todayYMD()
+  const ymd = date ?? todayYMD();
+  const isFuture = ymd > todayYMD();
 
-  const [existing, setExisting] = useState<DailyLog | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [existing, setExisting] = useState<DailyLog | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const [goal, setGoal] = useState('')
-  const [training, setTraining] = useState('')
-  const [condition, setCondition] = useState(3)
-  const [startTime, setStartTime] = useState('')
-  const [duration, setDuration] = useState('')
-  const [sleep, setSleep] = useState('')
-  const [weight, setWeight] = useState('')
-  const [painArea, setPainArea] = useState('')
-  const [selfReview, setSelfReview] = useState('')
+  const [goal, setGoal] = useState("");
+  const [training, setTraining] = useState("");
+  const [condition, setCondition] = useState(3);
+  const [startTime, setStartTime] = useState("");
+  const [duration, setDuration] = useState("");
+  const [sleep, setSleep] = useState("");
+  const [weight, setWeight] = useState("");
+  const [painArea, setPainArea] = useState("");
+  const [selfReview, setSelfReview] = useState("");
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
     const fetchLog = async () => {
       try {
         const q = query(
-          collection(db, 'dailyLogs'),
-          where('athleteId', '==', user.id),
-          where('date', '==', ymd)
-        )
-        const snap = await getDocs(q)
+          collection(db, "dailyLogs"),
+          where("athleteId", "==", user.id),
+          where("date", "==", ymd),
+        );
+        const snap = await getDocs(q);
         if (!snap.empty) {
-          const data = snap.docs[0].data() as Omit<DailyLog, 'id'>
-          const log = { id: snap.docs[0].id, ...data }
-          setExisting(log)
-          setGoal(log.goal ?? '')
-          setTraining(log.training ?? '')
-          setCondition(log.condition ?? 3)
-          setStartTime(log.startTime ?? '')
-          setDuration(log.duration != null ? String(log.duration) : '')
-          setSleep(log.sleep != null ? String(log.sleep) : '')
-          setWeight(log.weight != null ? String(log.weight) : '')
-          setPainArea(log.painArea ?? '')
-          setSelfReview(log.selfReview ?? '')
+          const data = snap.docs[0].data() as Omit<DailyLog, "id">;
+          const log = { id: snap.docs[0].id, ...data };
+          setExisting(log);
+          setGoal(log.goal ?? "");
+          setTraining(log.training ?? "");
+          setCondition(log.condition ?? 3);
+          setStartTime(log.startTime ?? "");
+          setDuration(log.duration != null ? String(log.duration) : "");
+          setSleep(log.sleep != null ? String(log.sleep) : "");
+          setWeight(log.weight != null ? String(log.weight) : "");
+          setPainArea(log.painArea ?? "");
+          setSelfReview(log.selfReview ?? "");
+          if (log.coachFeedback && !log.isFeedbackRead) {
+            updateDoc(doc(db, "dailyLogs", log.id), {
+              isFeedbackRead: true,
+            }).catch((err) => console.error("읽음 처리 에러:", err));
+          }
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchLog()
-  }, [user, ymd])
+    };
+    fetchLog();
+  }, [user, ymd]);
 
   const handleSave = async () => {
-    if (!user || isFuture) return
-    setSaving(true)
+    if (!user || isFuture) return;
+    setSaving(true);
     try {
       const payload = {
         athleteId: user.id,
         athleteName: user.name,
-        teamId: user.teamId ?? '',
+        teamId: user.teamId ?? "",
         date: ymd,
         goal: goal.trim(),
         training: training.trim(),
         condition,
         startTime: startTime || null,
-        duration: duration !== '' ? parseInt(duration, 10) : null,
-        sleep: sleep !== '' ? parseFloat(sleep) : null,
-        weight: weight !== '' ? parseFloat(weight) : null,
+        duration: duration !== "" ? parseInt(duration, 10) : null,
+        sleep: sleep !== "" ? parseFloat(sleep) : null,
+        weight: weight !== "" ? parseFloat(weight) : null,
         painArea: painArea.trim(),
         selfReview: selfReview.trim(),
         updatedAt: new Date().toISOString(),
-      }
+      };
 
       if (existing) {
-        await updateDoc(doc(db, 'dailyLogs', existing.id), payload)
-        setExisting({ ...existing, ...payload })
+        await updateDoc(doc(db, "dailyLogs", existing.id), payload);
+        setExisting({ ...existing, ...payload });
       } else {
-        const ref = await addDoc(collection(db, 'dailyLogs'), {
+        const ref = await addDoc(collection(db, "dailyLogs"), {
           ...payload,
           coachFeedback: null,
           coachFeedbackAt: null,
           coachId: null,
-          status: 'submitted',
+          status: "submitted",
           createdAt: new Date().toISOString(),
-        })
+        });
         setExisting({
           id: ref.id,
           ...payload,
           coachFeedback: null,
           coachFeedbackAt: null,
           coachId: null,
-          status: 'submitted',
+          status: "submitted",
           createdAt: payload.updatedAt,
-        })
+          isFeedbackRead: false,
+        });
       }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
-  if (loading) return <div className="card h-96 animate-pulse" />
+  if (loading) return <div className="card h-96 animate-pulse" />;
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
@@ -135,7 +149,10 @@ export default function AthleteLogPage() {
       {/* Form */}
       <div className="card p-5 space-y-0">
         <Row code="00" kicker="condition" hint="// 오늘의 컨디션 1–5">
-          <ConditionStars value={condition} onChange={isFuture ? undefined : setCondition} />
+          <ConditionStars
+            value={condition}
+            onChange={isFuture ? undefined : setCondition}
+          />
         </Row>
 
         <Row code="01" kicker="goal" hint="// 오늘 이루고 싶은 것">
@@ -207,7 +224,11 @@ export default function AthleteLogPage() {
           </div>
         </Row>
 
-        <Row code="05" kicker="pain.area" hint="// 통증·부상 부위 (없으면 비워두세요)">
+        <Row
+          code="05"
+          kicker="pain.area"
+          hint="// 통증·부상 부위 (없으면 비워두세요)"
+        >
           <input
             type="text"
             value={painArea}
@@ -237,10 +258,19 @@ export default function AthleteLogPage() {
               className="btn-primary"
             >
               <Save size={13} />
-              {saved ? 'saved ✓' : saving ? 'saving...' : existing ? 'update_log()' : 'save_log()'}
+              {saved
+                ? "saved ✓"
+                : saving
+                  ? "saving..."
+                  : existing
+                    ? "update_log()"
+                    : "save_log()"}
             </button>
             {existing && (
-              <button onClick={() => shareLogToKakao(existing)} className="btn-outline">
+              <button
+                onClick={() => shareLogToKakao(existing)}
+                className="btn-outline"
+              >
                 <Share2 size={13} />
                 share_kakao()
               </button>
@@ -259,29 +289,40 @@ export default function AthleteLogPage() {
             <span className="label !mb-0">coach.feedback</span>
             {existing.coachFeedbackAt && (
               <span className="font-mono text-[10px] text-[var(--color-pulse-sub2)]">
-                {new Date(existing.coachFeedbackAt).toLocaleDateString('ko-KR')}
+                {new Date(existing.coachFeedbackAt).toLocaleDateString("ko-KR")}
               </span>
             )}
           </div>
-          <p className="text-sm text-[var(--color-pulse-ink)] leading-relaxed">{existing.coachFeedback}</p>
+          <p className="text-sm text-[var(--color-pulse-ink)] leading-relaxed">
+            {existing.coachFeedback}
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function Row({
-  code, kicker, hint, children,
-}: { code: string; kicker: string; hint?: string; children: React.ReactNode }) {
+  code,
+  kicker,
+  hint,
+  children,
+}: {
+  code: string;
+  kicker: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[160px_1fr] gap-5 py-4 border-t hairline first:border-t-0 first:pt-0">
       <div>
         <div className="label !mb-0">
-          <span className="text-[var(--color-pulse-sub2)] mr-1">[{code}]</span>{kicker}
+          <span className="text-[var(--color-pulse-sub2)] mr-1">[{code}]</span>
+          {kicker}
         </div>
         {hint && <div className="hint mt-1">{hint}</div>}
       </div>
       <div className="min-w-0">{children}</div>
     </div>
-  )
+  );
 }
