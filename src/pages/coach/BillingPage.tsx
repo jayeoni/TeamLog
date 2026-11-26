@@ -196,7 +196,7 @@ export default function BillingPage() {
               size={14}
               className="text-[var(--color-pulse-accent)] flex-shrink-0"
             />
-            <span>전체 선수 일지 & 부상/통증 이력 평생 보관</span>
+            <span>전체 선수 일지 & 부상/통증 이력 보관</span>
           </div>
           <div className="flex items-center gap-2.5">
             <Check
@@ -224,7 +224,7 @@ export default function BillingPage() {
             ? "결제창 여는 중..."
             : isPro
               ? "결제 카드 변경하기"
-              : "월 19,000원 자동결제 시작하기"}
+              : "월 19,000원으로 시작하기"}
         </button>
 
         <div className="flex items-center justify-center gap-1.5 mt-4 text-[11px] font-mono text-[var(--color-pulse-sub)]">

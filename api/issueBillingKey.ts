@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // 토스페이먼츠 공식 테스트 시크릿 키 (개발/테스트용)
 // 라이브 전환 시 Vercel 환경 변수 TOSS_SECRET_KEY로 교체합니다.
-const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || 'test_sk_zXLkKEypNArWmo50nX3mqAqNOGダ'
+const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || 'test_sk_zXLkKEypNArWmo50nX3mqAqNOG'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS 헤더 설정
