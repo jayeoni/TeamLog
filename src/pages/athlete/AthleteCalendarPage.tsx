@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -12,9 +12,6 @@ export default function AthleteCalendarPage() {
   const navigate = useNavigate();
   const [stamps, setStamps] = useState<CalendarStamp[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentMonth, setCurrentMonth] = useState(() =>
-    todayYMD().slice(0, 7),
-  );
 
   useEffect(() => {
     if (!user) return;
@@ -47,14 +44,26 @@ export default function AthleteCalendarPage() {
     navigate(`/athlete/log/${ymd}`);
   };
 
+  const { written, feedback, pain } = useMemo(() => {
+    const currentMonth = todayYMD().slice(0, 7);
+    let w = 0;
+    let f = 0;
+    let p = 0;
+
+    for (const s of stamps) {
+      if (s.date.startsWith(currentMonth)) {
+        if (s.hasLog) w++;
+        if (s.hasFeedback) f++;
+        if (s.hasPain) p++;
+      }
+    }
+
+    return { written: w, feedback: f, pain: p };
+  }, [stamps]);
+
   if (loading) {
     return <div className="card h-96 animate-pulse" />;
   }
-
-  const monthStamps = stamps.filter((s) => s.date.startsWith(currentMonth));
-  const written = monthStamps.filter((s) => s.hasLog).length;
-  const feedback = monthStamps.filter((s) => s.hasFeedback).length;
-  const pain = monthStamps.filter((s) => s.hasPain).length;
 
   return (
     <div className="space-y-4">
